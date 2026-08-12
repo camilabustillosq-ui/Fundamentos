@@ -1,0 +1,18 @@
+//Camila Bustillos//
+#include <iostream>
+#include <cmath>
+using namespace std;
+int main()
+{
+  float s, area, a, b, c;
+  cout<<"Introduzca el primer lado: ";
+cin>>a;
+cout<<"Introduzca el segundo lado: ";
+cin>>b;
+cout<<"Introduzca el tercer lado: ";
+cin>>c;
+s=(a+b+c)/2;
+area= sqrt(s*(s-a)*(s-b)*(s-c));
+cout<<"El área del triángulo es de : "<<area<<" unidades cuadradas";
+    return 0;
+}
