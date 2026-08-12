@@ -4,15 +4,15 @@
 using namespace std;
 int main()
 {
-  float s, area, a, b, c;
+  float s, area, x, y, z;
   cout<<"Introduzca el primer lado: ";
-cin>>a;
+cin>>x;
 cout<<"Introduzca el segundo lado: ";
-cin>>b;
+cin>>y;
 cout<<"Introduzca el tercer lado: ";
-cin>>c;
-s=(a+b+c)/2;
-area= sqrt(s*(s-a)*(s-b)*(s-c));
+cin>>z;
+s=(x+y+z)/2;
+area= sqrt(s*(s-x)*(s-y)*(s-z));
 cout<<"El área del triángulo es de : "<<area<<" unidades cuadradas";
     return 0;
 }
