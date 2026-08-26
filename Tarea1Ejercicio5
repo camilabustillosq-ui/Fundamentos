@@ -1,0 +1,26 @@
+#include <iostream>
+#include <math.h>
+using namespace std;
+int main()
+{
+    float x1,x2,x3,y1,y2,y3;
+    float d,h,k,rad;
+    cout<<"Ingrese las coordenadas del punto 1 (x,y): "<<endl;
+    cin>>x1>>y1;
+    cout<<"Ingrese las coordenadas del punto 2 (x,y): "<<endl;
+    cin>>x2>>y2;
+    cout<<"Ingrese las coordenadas del punto 3 (x,y): "<<endl;
+    cin>>x3>>y3;
+    d = 2*(x1*(y2-y3) + x2*(y3-y1) + x3*(y1-y2));
+   
+    if (d==0){
+        cout<<"Los tres puntos son colineales, no forman una circunferencia.";
+    }else{
+        h = ((x1*x1 + y1*y1)*(y2-y3) + (x2*x2 + y2*y2)*(y3-y1) + (x3*x3 + y3*y3)*(y1-y2))/d;
+        k = ((x1*x1 + y1*y1)*(x3-x2) + (x2*x2 + y2*y2)*(x1-x3) + (x3*x3 + y3*y3)*(x2-x1))/d;
+        rad = sqrt((h-x1)*(h-x1) + (k-y1)*(k-y1));
+        cout<<"El centro de la circunferencia es: ("<<h<<", "<<k<<")"<<endl;
+        cout<<"El radio de la circunferencia es: "<<rad;
+    }
+    return 0;
+}
