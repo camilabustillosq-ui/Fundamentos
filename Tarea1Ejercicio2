@@ -1,0 +1,15 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    float r,a,p,pi;
+    pi=3.141592;
+    cout<<"Introduzca el radio de su círculo: ";
+    cin>>r;
+    a=pi*r*r;
+    p=2*pi*r;
+    cout<<"Los datos de su figura son:"<<endl;
+    cout<<"Área: "<<a<<" unidades cuadradas"<<endl;
+    cout<<"Perímetro: "<<p<<" unidades";
+    return 0;
+}
