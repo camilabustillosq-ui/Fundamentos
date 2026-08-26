@@ -1,0 +1,17 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    int A,B,i;
+    cout<<"Introduzca el valor de A: ";
+    cin>>A;
+    cout<<"Introduzca el valor de B: ";
+    cin>>B;
+    i=A;
+    A=B;
+    B=i;
+    cout<<"Los valores intercambiados son:"<<endl;
+    cout<<"A="<<A<<endl;
+    cout<<"B="<<B<<endl;
+    return 0;
+}
