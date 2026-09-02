@@ -1,0 +1,36 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    int a, b, r, opcion;
+    cout<<"Introduzca el primer término: "<<endl;
+    cin>>a;
+    cout<<"Introduzca el segundo término: "<<endl;
+    cin>>b;
+    cout<<"1.- Suma";
+    cout<<"\n2.- Resta";
+    cout<<"\n3.- Producto";
+    cout<<"\n4.- División";
+    cout<<"\nElige una opción: ";
+    cin>>opcion;
+    switch (opcion) {
+        case 1: 
+            r= a+b;
+            break;
+        case 2: 
+            r= a-b;
+            break;
+        case 3: 
+            r= a*b;
+            break;
+        case 4: 
+            r= a/b;
+            break;
+        case 0: 
+            cout<<"Salir";
+            return 0;
+        default: cout<<"Opción inválida";
+    }
+    cout<<"El resultado es: "<<r;
+    return 0;
+}
