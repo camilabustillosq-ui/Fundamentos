@@ -1,0 +1,35 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    int prod;
+    float c, T;
+    cout<<"1.- Hamburguesa...................(Bs. 3)";
+    cout<<"\n2.- Hamburguesa con queso..........(Bs.5)";
+    cout<<"\n3.- Papas fritas..................(Bs. 2)";
+    cout<<"\n4.- Soda........................(Bs. 2.5)";
+    cout<<"\n0.- Salir";
+    cout<<"\nIngrese el producto a elegir: ";
+    cin>>prod;
+    cout<<"Ingrese la cantidad del producto elegido: ";
+    cin>>c;
+    switch (prod){
+        case 1:
+            T=3*c;
+            break;
+        case 2:
+            T=5*c;
+            break;
+        case 3:
+            T=2*c;
+            break;
+        case 4:
+            T=2.5*c;
+            break;
+        case 0:
+            return 0;
+    }
+    cout<<"El total de la compra será: "<<T<<" (Bs.)";
+
+    return 0;
+}
