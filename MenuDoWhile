@@ -1,0 +1,63 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    int prod, c, canham=0,canhamq=0, canpapas=0, cansoda=0;
+    float T, cuentaparcial, cuentafinal, totham=0, tothamq=0, totpapas=0, totsoda=0;
+    do {
+    cout<<"\n-------------------MENÚ-------------------",
+    cout<<"\n1.- Hamburguesa...................(Bs. 3)";
+    cout<<"\n2.- Hamburguesa con queso..........(Bs.5)";
+    cout<<"\n3.- Papas fritas..................(Bs. 2)";
+    cout<<"\n4.- Soda........................(Bs. 2.5)";
+    cout<<"\n0.- Salir";
+    cout<<"\nIngrese el producto a elegir: ";
+    cin>>prod;
+   
+    switch (prod){
+        case 1:
+        //validar que sea minimo 0
+             cout<<"\nCuántos desea? ";
+             do{
+             cin>>c;
+             }while (c>0);
+             canham=canham+c;
+             cuentaparcial=canham*3;
+             totham=totham+cuentaparcial;
+            break;
+        case 2:
+             cout<<"\nCuántos desea? ";
+             cin>>c;
+             canhamq=canhamq+c;
+             cuentaparcial=canhamq*5;
+             tothamq=tothamq+cuentaparcial;
+            break;
+        case 3:
+             cout<<"\nCuántos desea? ";
+             cin>>c;
+             canpapas=canpapas+c;
+             cuentaparcial=canpapas*2;
+             totpapas=totpapas+cuentaparcial;
+            break;
+        case 4:
+             cout<<"\nCuántos desea? ";
+             cin>>c;
+             cansoda=cansoda+c;
+             cuentaparcial=cansoda*2.5;
+             totsoda=totsoda+cuentaparcial;
+            break;
+        case 0:
+            cout<<"Ha salido del menú";
+        default:
+            cout<<"Opción inválida";
+    }
+    }while (prod !=0);
+    cout<<"\nITEM                                   CANTIDAD            TOTAL PARCIAL";
+    cout<<"\n1.- Hamburguesa...........(Bs. 3)      "<<canham<<"                      "<<totham;
+    cout<<"\n2.- Hamburguesa con queso..(Bs.5)      "<<canhamq<<"                      "<<tothamq;
+    cout<<"\n3.- Papas fritas..........(Bs. 2)      "<<canpapas<<"                      "<<totpapas;
+    cout<<"\n4.- Soda................(Bs. 2.5)      "<<cansoda<<"                      "<<totsoda;
+    cout<<"\nEl total de su compra es de: "<<totham+tothamq+totpapas+totsoda<<" Bs.";
+    
+    return 0;
+}
