@@ -1,0 +1,14 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    int suma=0, cont=0, n;
+    cout<<"Ingrese cuántos cuadrados quiere sumar: ";
+    cin>>n;
+    do{
+        cont=cont+1;
+        suma=suma+cont*cont;
+    }while(cont<n);
+    cout<<suma;
+    return 0;
+}
