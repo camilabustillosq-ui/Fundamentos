@@ -1,0 +1,35 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+int main()
+{
+    char opcion;
+    do {
+        int n, cont = 2, dig = 1;
+        cout << "Ingrese cuántos números primos desea mostrar: ";
+        cin >> n;
+        while (dig <= n) {
+            bool flag = true;
+
+            for (int i = 2; i <= sqrt(cont); i++) {
+                if (cont % i == 0) {
+                    flag = false;
+                    break;
+                }
+            }
+
+            if (flag) {
+                cout << cont << ", ";
+                dig++;
+            }
+            cont++;
+        }
+
+        cout << "\n\n¿Desea repetir? (s/n): ";
+        cin >> opcion;
+    } while (opcion == 's' || opcion == 'S');
+    cout << "\nPrograma terminado";
+
+    return 0;
+}
