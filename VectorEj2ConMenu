@@ -1,0 +1,86 @@
+
+#include <iostream>
+#define MAX 100
+using namespace std;
+
+void cargar(int a[], int tam);
+void mostrar(int a[], int tam);
+void burbuja(int a[], int tam);
+double encontrarMinimo(double a[], int n);
+ 
+int main()
+{
+	int opcion, n, v[MAX];
+	do {
+		cout << "MENU" << endl;
+		cout << "1.- Cargar" << endl;
+		cout << "2.- Mostrar" << endl;
+		cout << "3.- Burbuja" << endl;
+  cout << "4.- Minimo" << endl;
+		cout << "0.- Salir" << endl;
+		cout << "Elija una opción" << endl;
+		cin >> opcion;
+
+		switch (opcion) {
+		case 1:
+			do {
+				cout << "Cuántos elementos quiere?" << endl;
+				cin >> n;
+			} while (n > MAX || n <= 0);
+			cargar(v, n);
+				break;
+		case 2:
+			mostrar(v, n);
+			break;
+		case 3:
+			burbuja(v, n);
+			break;
+  case 4:
+    encontrarMinimo(v, n)
+  break;
+		case 0:
+			cout << "Saliendo..." << endl;
+			break;
+		default:
+			cout << "Error" << endl;
+		}
+	} while (opcion != 0);
+}
+
+void cargar(int a[], int tam) {
+	for (int i = 0; i < tam; i++) {
+		cout << "v[" << i << "]=" << endl;
+		cin >> a[i];
+	}
+}
+void mostrar(int a[], int tam) {
+	for (int i = 0; i < tam; i++) {
+		cout << "v[" << i << "]=" << endl;
+		cout << a[i];
+	}
+}
+
+double encontrarMinimo(double a[], int n) {
+    double minimo = a[0];
+    for (int i = 1; i < n; i++) {
+        if (a[i] < minimo) {
+            minimo = a[i];
+        }
+    }
+    return minimo;
+}
+
+
+	void burbuja(int a[], int tam)
+	{
+		int aux = 0;
+		for (int i = 0; i < tam - 1; i++) {
+			for (int j = i + 1; j < tam; j++) {
+				if (a[i] > a[j]) {
+					aux = a[j];
+					a[j] = a[i];
+					a[i] = aux;
+				}
+			}
+		}
+}
