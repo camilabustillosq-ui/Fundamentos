@@ -1,0 +1,39 @@
+#include <iostream>
+#include "conio.h"
+#include <string>
+
+using namespace std;
+
+int main()
+{
+	int longitud, cont, pos;
+	char aux;
+
+	string var1, var2, nombre;
+	getline(cin, nombre);
+	var2 = nombre;
+	longitud = nombre.length();
+	for (int i = 0; i < longitud / 2; i++)
+	{
+		aux = nombre[i];
+		nombre[i] = nombre[longitud - 1 - i];
+		nombre[longitud - 1 - i] = aux;
+	}
+	cout << "La cadena invertida es: " << nombre << endl;
+
+	if (var2.compare(nombre) == 0)
+		cout << "Es un palindromo";
+
+
+	var2 = nombre;
+	cont = 0;
+	longitud = nombre.length();
+	for (int i = 0; i < longitud; i++)
+		if (nombre[i] != 'a' && nombre[i] != 'e' && nombre[i] != 'i' && nombre[i] != 'o' && nombre[i] != 'u')
+		{
+			var2[cont] = nombre[i];
+			cont++;
+		}
+	cout << "Sin vocales es: " << var2;
+	return 0;
+}
