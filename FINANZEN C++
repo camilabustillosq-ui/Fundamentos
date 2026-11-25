@@ -1,0 +1,2666 @@
+// FinanZen - version consola en un solo archivo
+// Sistema de gestion financiera personal. Integrantes: Joaquin 1, Camila, Joaquin 2, Hector, Josue.
+// Integrado con ayuda de Claude Code (IA). Cada funcion indica su origen con "// Origen:" o "// Agregado:".
+// Compilar: g++ -std=c++17 FinanZen_consola.cpp -o FinanZen_consola.exe
+
+#include <string>
+#include <iostream>
+#include <cmath>
+#include <limits>
+#include <cstdlib>
+#include <iomanip>
+#include <fstream>
+#include <cstdio>
+using namespace std;
+
+// ==========================================================================
+// DECLARACIONES COMUNES (arreglos y funciones de los 5 modulos)
+// ==========================================================================
+
+
+// ----- motor/finanzen.h -----
+
+// FinanZen — motor común · integrado con ayuda de Claude Code (IA)
+// Aquí se declaran los arreglos y funciones de los 5 módulos del equipo.
+// Cada módulo los define en su propio archivo .cpp dentro de motor/.
+
+
+#define MAX 100
+#define MONTO_MAXIMO 1000000000.0 // tope común de montos (el de Hector), igual en consola y app
+
+// ===== Módulo 1: Usuarios (Joaquín 1) — motor/usuarios.cpp =====
+extern string usu[MAX];   // nombres (original)
+extern string con[MAX];   // contraseñas (original)
+extern int usuId[MAX];    // id fijo de cada usuario (agregado para unir módulos)
+extern int total;         // cantidad de usuarios (original)
+extern int proximoId;     // próximo id a entregar
+extern int sesion;        // id del usuario conectado, -1 si no hay nadie
+
+int buscarUsuario(string nombre);
+bool registrar(string nombre, string clave);
+bool iniciar(string nombre, string clave);
+void cerrarSesion();
+bool modificar(int pos, string nombre, string clave);
+bool borrar(int pos);
+int indiceSesion();
+string nombreSesion();
+
+// ===== Módulo 2: Ingresos (Camila) — motor/ingresos.cpp =====
+#define MAX_ING 100
+extern string ingDesc[MAX_ING];
+extern double ingMonto[MAX_ING];
+extern int ingCat[MAX_ING];
+extern string ingFecha[MAX_ING];
+extern int ingUsuario[MAX_ING]; // agregado: id del dueño
+extern int ingTotal;
+extern string nombreCatIng[4];
+
+bool fechaValidaIng(string f);
+bool agregarIngreso(string desc, double monto, int cat, string fecha);
+bool cambiarIngreso(int i, string desc, double monto, int cat, string fecha);
+bool quitarIngreso(int i);
+double sumaIngresos();
+double sumaIngresosCat(int cat);
+int cantidadIngresos();
+void borrarIngresosDeUsuario(int id);
+
+// ===== Módulo 3: Gastos (Joaquín 2) — motor/gastos.cpp =====
+#define NUM_CAT_GAS 6
+extern float gastos[MAX];       // montos (original)
+extern int nGastos;             // cantidad (original: parámetro n)
+extern string gasDesc[MAX];
+extern int gasCat[MAX];
+extern string gasFecha[MAX];
+extern int gasUsuario[MAX];
+extern float limiteGasto[MAX];  // límite por posición de usuario (original: limite)
+extern string nombreCatGas[NUM_CAT_GAS];
+
+bool registrarGasto(string desc, float monto, int cat, string fecha);
+bool establecerLimite(float limite);
+float limiteSesion();
+double totalGastado();
+float gastoMayor();
+float gastoMenor();
+double totalGastadoCat(int cat);
+int cantidadGastos();
+bool modificarGasto(int i, string desc, float monto, int cat, string fecha);
+bool eliminarGasto(int i);
+void borrarGastosDeUsuario(int id);
+void reiniciarLimiteUsuario(int pos);
+void eliminarLimiteDeUsuario(int pos, int totalAntes);
+
+// ===== Módulo 4: Planificación del ahorro (Hector) — motor/ahorro.cpp =====
+static const int MAX_METAS_AHORRO = 100;
+extern string nombreMeta[MAX_METAS_AHORRO];
+extern double montoMeta[MAX_METAS_AHORRO];
+extern double ahorroActual[MAX_METAS_AHORRO];
+extern int mesesMeta[MAX_METAS_AHORRO];
+extern bool tieneMeta[MAX_METAS_AHORRO];
+
+bool montoConDosDecimales(double v);
+double calcularFaltanteAhorro(int usuario);
+double obtenerAhorroMensual(int usuario);
+bool guardarNuevaMeta(int usuario, string nombre, double monto, double actual, int meses);
+bool modificarMetaCompleta(int usuario, string nombre, double monto, double actual, int meses);
+bool metaValida(string nombre, double monto, double actual, int meses);
+double cuotaMensual(double monto, double actual, int meses);
+bool cambiarNombreMeta(int usuario, string nombre);
+bool cambiarMontoMeta(int usuario, double monto);
+bool actualizarAhorroAcumulado(int usuario, double actual);
+bool cambiarPlazoMeta(int usuario, int meses);
+long long mesesConAporte(int usuario, double aporte);
+int proyeccionAhorro(int usuario, double aporte[], double acumulado[], int max);
+void reiniciarMetaUsuario(int usuario);
+void eliminarMetaDeUsuario(int usuario, int totalAntes);
+
+// ===== Módulo 5: Seguimiento y reportes (Josue) — motor/reportes.cpp =====
+extern double ahoMonto[MAX];
+extern string ahoFecha[MAX];
+extern int ahoUsuario[MAX];
+extern int ahoTotal;
+
+bool registro_ahorro(double monto, string fecha);
+double progreso_ahorro();
+void resumen_financiero(double &ingresos, double &gastosTotales, double &ahorrado, double &saldo);
+double totalAhorradoRegistrado();
+double saldoDisponible();
+void borrarAhorrosDeUsuario(int id);
+
+// ===== Cifrado de contraseñas — motor/cifrado.cpp (estilo del ejemplo del equipo) =====
+#define LLAVE_CIFRADO 100
+string cifrar(string mensaje, int llaveCifrado);
+string descifrar(string cifrado, int llaveDescifrado);
+bool claveValida(string clave);
+
+// ===== Común — motor/archivos.cpp =====
+extern string carpetaDatos;
+bool textoValido(string t);
+void borrarDatosDeUsuario(int pos);
+void reiniciarTodo();
+bool guardarTodo();
+bool cargarTodo();
+
+
+
+// ----- consola/consola.h -----
+
+// FinanZen — versión consola · integrado con ayuda de Claude Code (IA)
+
+// leer.cpp — lectores robustos de Hector (originales: leerEnteroAhorro, leerMontoAhorro, leerTextoAhorro)
+int leerEntero(string mensaje, int minimo, int maximo);
+double leerMonto(string mensaje, double minimo, double maximo);
+string leerTexto(string mensaje);
+string leerFecha(string mensaje);
+void guardar(); // guardarTodo() con aviso si falla
+
+// menu_usuarios.cpp — Joaquín 1
+void registrarConsola();
+bool iniciarConsola();
+void lista();
+void menuPerfil();
+
+// menu_ingresos.cpp — Camila
+void menuIngresos();
+
+// menu_gastos.cpp — Joaquín 2
+void menuGastos();
+
+// menu_ahorro.cpp — Hector
+void menuPlanificacionAhorro(int usuario);
+void modificarMetaAhorro(int usuario);
+
+// menu_reportes.cpp — Josue
+void menuReportes();
+
+
+
+// ==========================================================================
+// MODULO 1: USUARIOS Y AUTENTICACION (Joaquin 1) + CIFRADO
+// ==========================================================================
+
+
+// ----- motor/usuarios.cpp -----
+
+// FinanZen — módulo 1 (Joaquín 1): usuarios y autenticación · integrado con ayuda de Claude Code (IA)
+// Lógica tomada de originales/usuarios_joaquin1.cpp. Los cin/cout originales
+// quedaron en consola/menu_usuarios.cpp; aquí solo queda la lógica.
+
+// Arreglos globales (originales)
+string usu[MAX];
+string con[MAX];
+int total = 0;
+
+// Agregados para unir los módulos
+int usuId[MAX];
+int proximoId = 1;
+int sesion = -1;
+
+// Agregado: Busca un nombre en usu[]; devuelve la posición o -1 (apoyo para no repetir nombres)
+int buscarUsuario(string nombre)
+{
+    for (int i = 0; i < total; i++)
+    {
+        if (usu[i] == nombre)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Origen: registrar() — Joaquín 1
+bool registrar(string nombre, string clave)
+{
+    if (total >= MAX)
+    {
+        return false; // "No hay espacio para mas usuarios"
+    }
+    if (!textoValido(nombre) || !claveValida(clave))
+    {
+        return false;
+    }
+    if (buscarUsuario(nombre) != -1)
+    {
+        return false; // Corregido: el original permitía dos usuarios con el mismo nombre
+    }
+
+    usu[total] = nombre;
+    con[total] = clave;
+    usuId[total] = proximoId;
+    proximoId++;
+
+    reiniciarMetaUsuario(total);   // módulo de Hector: la posición empieza sin meta
+    reiniciarLimiteUsuario(total); // módulo de Joaquín 2: sin límite de gasto
+
+    total++;
+    return true; // "Usuario registrado correctamente"
+}
+
+// Origen: iniciar() — Joaquín 1
+bool iniciar(string nombre, string clave)
+{
+    bool encontrado = false;
+
+    for (int i = 0; i < total; i++)
+    {
+        if (usu[i] == nombre && con[i] == clave)
+        {
+            encontrado = true;
+            sesion = usuId[i];
+            break;
+        }
+    }
+
+    return encontrado;
+}
+
+// Agregado: cierra la sesión actual
+void cerrarSesion()
+{
+    sesion = -1;
+}
+
+// Agregado: Posición en usu[] del usuario conectado (-1 si no hay sesión)
+int indiceSesion()
+{
+    for (int i = 0; i < total; i++)
+    {
+        if (usuId[i] == sesion)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Agregado: nombre del usuario conectado
+string nombreSesion()
+{
+    int p = indiceSesion();
+    if (p == -1)
+    {
+        return "";
+    }
+    return usu[p];
+}
+
+// Origen: modificar() — Joaquín 1 (pos empieza en 0; el original usaba p - 1)
+bool modificar(int pos, string nombre, string clave)
+{
+    if (pos < 0 || pos >= total || pos != indiceSesion()) // agregado: solo la propia cuenta
+    {
+        return false; // "Usuario no encontrado"
+    }
+    if (!textoValido(nombre) || !claveValida(clave))
+    {
+        return false;
+    }
+    int otro = buscarUsuario(nombre);
+    if (otro != -1 && otro != pos)
+    {
+        return false;
+    }
+
+    usu[pos] = nombre;
+    con[pos] = clave;
+    return true; // "Usuario modificado correctamente"
+}
+
+// Origen: borrar() — Joaquín 1
+bool borrar(int pos)
+{
+    if (pos < 0 || pos >= total || pos != indiceSesion()) // agregado: solo la propia cuenta
+    {
+        return false; // "Usuario no encontrado"
+    }
+
+    int id = usuId[pos];
+    borrarDatosDeUsuario(pos); // agregado: borra sus ingresos, gastos, meta y ahorros
+
+    for (int i = pos; i < total - 1; i++)
+    {
+        usu[i] = usu[i + 1];
+        con[i] = con[i + 1];
+        usuId[i] = usuId[i + 1];
+    }
+
+    total--;
+
+    if (sesion == id)
+    {
+        sesion = -1;
+    }
+    return true; // "Usuario eliminado correctamente"
+}
+
+
+// ----- motor/cifrado.cpp -----
+
+// FinanZen — cifrado de contraseñas · integrado con ayuda de Claude Code (IA)
+// Origen: el ejemplo de cifrado del equipo (sumar una llave a cada letra para cifrar,
+// restarla para descifrar). Se usa al guardar y leer usuarios.txt, así las
+// contraseñas no se pueden leer abriendo el archivo.
+//
+// Por qué la llave es 100: las contraseñas solo tienen letras sin tilde, números y
+// símbolos (códigos 32 a 126). Sumando 100, todas quedan entre 132 y 226, fuera de
+// las letras normales. Así el cifrado nunca produce un '|' (que separa los campos
+// del archivo) ni un salto de línea.
+
+// Origen: BLOQUE 2: CIFRADO del ejemplo del equipo
+string cifrar(string mensaje, int llaveCifrado)
+{
+    string cifrado = mensaje;
+    for (int i = 0; i < (int)cifrado.length(); i++)
+    {
+        cifrado[i] = cifrado[i] + llaveCifrado;
+    }
+    return cifrado;
+}
+
+// Origen: BLOQUE 3: DESCIFRADO del ejemplo del equipo
+string descifrar(string cifrado, int llaveDescifrado)
+{
+    string descifrado = cifrado;
+    for (int i = 0; i < (int)descifrado.length(); i++)
+    {
+        descifrado[i] = descifrado[i] - llaveDescifrado;
+    }
+    return descifrado;
+}
+
+// Agregado: una contraseña válida tiene solo letras sin tilde, números, espacios y símbolos
+// (sin '|'), y no puede estar vacía.
+bool claveValida(string clave)
+{
+    if (!textoValido(clave))
+    {
+        return false;
+    }
+    for (int i = 0; i < (int)clave.length(); i++)
+    {
+        unsigned char c = clave[i];
+        if (c < 32 || c > 126)
+        {
+            return false; // tildes, ñ y otros caracteres especiales
+        }
+    }
+    return true;
+}
+
+
+// ----- consola/menu_usuarios.cpp -----
+
+// FinanZen — módulo 1 (Joaquín 1): menús de usuarios · integrado con ayuda de Claude Code (IA)
+// Textos tomados de originales/usuarios_joaquin1.cpp; la lógica está en motor/usuarios.cpp.
+
+// Menú 1: Registro de usuarios — Origen: registrar()
+void registrarConsola()
+{
+    if (total >= MAX)
+    {
+        cout << "\nNo hay espacio para mas usuarios";
+        return;
+    }
+
+    cout << "\n--- REGISTRAR USUARIO ---\n";
+    string nombre = leerTexto("Nombre completo: ");
+    string clave = leerTexto("Contrasena (letras sin tilde, numeros y simbolos; se guarda cifrada): ");
+    while (!claveValida(clave))
+    {
+        clave = leerTexto("Contrasena invalida. Use letras sin tilde, numeros y simbolos: ");
+    }
+
+    if (registrar(nombre, clave))
+    {
+        guardar();
+        cout << "\nUsuario registrado correctamente";
+    }
+    else
+    {
+        cout << "\nYa existe un usuario con ese nombre";
+    }
+}
+
+// Menú 2: Inicio de sesión — Origen: iniciar()
+bool iniciarConsola()
+{
+    if (total == 0)
+    {
+        cout << "\nNo hay usuarios registrados";
+        return false;
+    }
+
+    cout << "\n--- INICIAR SESION ---\n";
+    string nombre = leerTexto("Nombre completo: ");
+    string clave = leerTexto("Contrasena: ");
+
+    if (iniciar(nombre, clave))
+    {
+        cout << "\nInicio de sesion exitoso";
+        cout << "\nBienvenido: " << nombre;
+        return true;
+    }
+    cout << "\nNombre o contrasena incorrectos";
+    return false;
+}
+
+// Origen: lista() — Joaquín 1 (copia: solo muestra nombres)
+void lista()
+{
+    cout << "\n--- LISTA DE USUARIOS ---";
+
+    if (total == 0)
+    {
+        cout << "\nNo hay usuarios registrados";
+        return;
+    }
+
+    for (int i = 0; i < total; i++)
+    {
+        cout << "\nUsuario " << i + 1;
+        cout << "\nNombre: " << usu[i];
+        cout << "\n----------------------";
+    }
+}
+
+// Menú 3: Administración del perfil — Origen: el "SISTEMA DE MODIFICACION" de main()
+void menuPerfil()
+{
+    int z = 9;
+    while (z != 0 && sesion != -1)
+    {
+        cout << "\n===== SISTEMA DE MODIFICACION =====";
+        cout << "\nUsuario: " << nombreSesion();
+        cout << "\n1. Mod usuario";
+        cout << "\n2. Mod meta";
+        cout << "\n3. Borrar mi cuenta";
+        cout << "\n0. Volver\n";
+        z = leerEntero("Seleccione una opcion: ", 0, 3);
+
+        switch (z)
+        {
+            case 1:
+            {
+                // Origen: modificar()
+                cout << "\n--- MODIFICAR USUARIO ---\n";
+                string nombre = leerTexto("Nuevo nombre: ");
+                string clave = leerTexto("Nueva contrasena (letras sin tilde, numeros y simbolos): ");
+                while (!claveValida(clave))
+                {
+                    clave = leerTexto("Contrasena invalida. Use letras sin tilde, numeros y simbolos: ");
+                }
+                if (modificar(indiceSesion(), nombre, clave))
+                {
+                    guardar();
+                    cout << "\nUsuario modificado correctamente";
+                }
+                else
+                {
+                    cout << "\nEse nombre ya lo usa otro usuario";
+                }
+                break;
+            }
+            case 2:
+                // Corregido: en el original este case estaba vacío; ahora abre el menú de Hector
+                modificarMetaAhorro(indiceSesion());
+                break;
+            case 3:
+                // Origen: borrar()
+                cout << "\n--- BORRAR USUARIO ---";
+                if (leerEntero("\nSe borraran tambien sus ingresos, gastos y metas. Confirmar? (1. Si / 0. No): ", 0, 1) == 1)
+                {
+                    borrar(indiceSesion());
+                    guardar();
+                    cout << "\nUsuario eliminado correctamente";
+                }
+                break;
+            case 0:
+                break;
+        }
+    }
+}
+
+
+// ==========================================================================
+// MODULO 2: GESTION DE INGRESOS (Camila)
+// ==========================================================================
+
+
+// ----- motor/ingresos.cpp -----
+
+// FinanZen — módulo 2 (Camila): gestión de ingresos · integrado con ayuda de Claude Code (IA)
+// Lógica tomada de originales/ingresos_camila.cpp. Los cin/cout originales
+// quedaron en consola/menu_ingresos.cpp.
+
+// Arreglos globales (originales)
+string ingDesc[MAX_ING];
+double ingMonto[MAX_ING];
+int ingCat[MAX_ING];
+string ingFecha[MAX_ING];
+int ingTotal = 0;
+
+string nombreCatIng[4] = {"Sueldo", "Freelance", "Ventas", "Otros"};
+
+// Agregado para unir módulos: id del usuario dueño de cada ingreso
+int ingUsuario[MAX_ING];
+
+// Origen: fechaValidaIng() — Camila (copia exacta; la usan todos los módulos)
+bool fechaValidaIng(string f)
+{
+    if (f.length() != 10)
+    {
+        return false;
+    }
+
+    if (f[2] != '/' || f[5] != '/')
+    {
+        return false;
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        if (i != 2 && i != 5)
+        {
+            if (f[i] < '0' || f[i] > '9')
+            {
+                return false;
+            }
+        }
+    }
+
+    int dia = (f[0] - '0') * 10 + (f[1] - '0');
+    int mes = (f[3] - '0') * 10 + (f[4] - '0');
+    int anio = (f[6] - '0') * 1000 + (f[7] - '0') * 100 + (f[8] - '0') * 10 + (f[9] - '0');
+
+    if (anio < 1900 || anio > 2100)
+    {
+        return false;
+    }
+
+    if (mes < 1 || mes > 12)
+    {
+        return false;
+    }
+
+    int diasMes[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    if ((anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0)
+    {
+        diasMes[1] = 29;
+    }
+
+    if (dia < 1 || dia > diasMes[mes - 1])
+    {
+        return false;
+    }
+
+    return true;
+}
+
+// Agregado: Las validaciones que Camila hacía con while al pedir los datos
+bool datosIngresoValidos(string desc, double monto, int cat, string fecha)
+{
+    if (!textoValido(desc))
+    {
+        return false;
+    }
+    if (monto <= 0 || monto > MONTO_MAXIMO || !montoConDosDecimales(monto)) // "Monto invalido, ingrese un valor mayor a 0"
+    {
+        return false;
+    }
+    if (cat < 0 || cat > 3) // "Categoria invalida"
+    {
+        return false;
+    }
+    if (!fechaValidaIng(fecha)) // "Fecha invalida, use el formato dd/mm/aaaa"
+    {
+        return false;
+    }
+    return true;
+}
+
+// Origen: registrarIngreso() — Camila
+bool agregarIngreso(string desc, double monto, int cat, string fecha)
+{
+    if (sesion == -1)
+    {
+        return false;
+    }
+    if (ingTotal >= MAX_ING)
+    {
+        return false; // "No hay espacio para mas ingresos"
+    }
+    if (!datosIngresoValidos(desc, monto, cat, fecha))
+    {
+        return false;
+    }
+
+    ingDesc[ingTotal] = desc;
+    ingMonto[ingTotal] = monto;
+    ingCat[ingTotal] = cat;
+    ingFecha[ingTotal] = fecha;
+    ingUsuario[ingTotal] = sesion;
+
+    ingTotal++;
+    return true; // "Ingreso registrado correctamente"
+}
+
+// Agregado: Un índice es del usuario conectado
+bool ingresoEsMio(int i)
+{
+    return sesion != -1 && i >= 0 && i < ingTotal && ingUsuario[i] == sesion;
+}
+
+// Origen: modificarIngreso() — Camila (i es la posición en los arreglos, desde 0)
+bool cambiarIngreso(int i, string desc, double monto, int cat, string fecha)
+{
+    if (!ingresoEsMio(i))
+    {
+        return false; // "Ingreso no encontrado"
+    }
+    if (!datosIngresoValidos(desc, monto, cat, fecha))
+    {
+        return false;
+    }
+
+    ingDesc[i] = desc;
+    ingMonto[i] = monto;
+    ingCat[i] = cat;
+    ingFecha[i] = fecha;
+    return true; // "Ingreso modificado correctamente"
+}
+
+// Origen: borrarIngreso() — Camila
+bool quitarIngreso(int p)
+{
+    if (!ingresoEsMio(p))
+    {
+        return false; // "Ingreso no encontrado"
+    }
+
+    for (int i = p; i < ingTotal - 1; i++)
+    {
+        ingDesc[i] = ingDesc[i + 1];
+        ingMonto[i] = ingMonto[i + 1];
+        ingCat[i] = ingCat[i + 1];
+        ingFecha[i] = ingFecha[i + 1];
+        ingUsuario[i] = ingUsuario[i + 1];
+    }
+
+    ingTotal--;
+    return true; // "Ingreso eliminado correctamente"
+}
+
+// Origen: resumenIngresos() — Camila (suma total del usuario conectado)
+double sumaIngresos()
+{
+    double suma = 0;
+    for (int i = 0; i < ingTotal; i++)
+    {
+        if (ingUsuario[i] == sesion)
+        {
+            suma = suma + ingMonto[i];
+        }
+    }
+    return suma;
+}
+
+// Origen: resumenIngresos() — Camila (porCat[])
+double sumaIngresosCat(int cat)
+{
+    double suma = 0;
+    for (int i = 0; i < ingTotal; i++)
+    {
+        if (ingUsuario[i] == sesion && ingCat[i] == cat)
+        {
+            suma = suma + ingMonto[i];
+        }
+    }
+    return suma;
+}
+
+// Agregado: cuántos ingresos tiene el usuario conectado
+int cantidadIngresos()
+{
+    int c = 0;
+    for (int i = 0; i < ingTotal; i++)
+    {
+        if (ingUsuario[i] == sesion)
+        {
+            c++;
+        }
+    }
+    return c;
+}
+
+// Agregado: al borrar una cuenta se borran sus ingresos
+void borrarIngresosDeUsuario(int id)
+{
+    int j = 0;
+    for (int i = 0; i < ingTotal; i++)
+    {
+        if (ingUsuario[i] != id)
+        {
+            ingDesc[j] = ingDesc[i];
+            ingMonto[j] = ingMonto[i];
+            ingCat[j] = ingCat[i];
+            ingFecha[j] = ingFecha[i];
+            ingUsuario[j] = ingUsuario[i];
+            j++;
+        }
+    }
+    ingTotal = j;
+}
+
+
+// ----- consola/menu_ingresos.cpp -----
+
+// FinanZen — módulo 2 (Camila): menús de ingresos · integrado con ayuda de Claude Code (IA)
+// Textos tomados de originales/ingresos_camila.cpp; la lógica está en motor/ingresos.cpp.
+
+// Origen: elegirCategoriaIng() — Camila
+int elegirCategoriaIng()
+{
+    cout << "\nCategoria:";
+    for (int i = 0; i < 4; i++)
+    {
+        cout << "\n  " << i + 1 << ". " << nombreCatIng[i];
+    }
+    cout << "\n";
+    return leerEntero("Seleccione una categoria: ", 1, 4) - 1;
+}
+
+// Origen: mostrarIngreso() — Camila
+void mostrarIngreso(int numero, int i)
+{
+    cout << "\nIngreso " << numero;
+    cout << "\nDescripcion: " << ingDesc[i];
+    cout << "\nMonto: " << ingMonto[i];
+    cout << "\nCategoria: " << nombreCatIng[ingCat[i]];
+    cout << "\nFecha: " << ingFecha[i];
+    cout << "\n----------------------";
+}
+
+// Lista numerada de los ingresos del usuario; mios[] guarda su posición real en los arreglos
+int listarMisIngresos(int mios[])
+{
+    int k = 0;
+    for (int i = 0; i < ingTotal; i++)
+    {
+        if (ingUsuario[i] == sesion)
+        {
+            mios[k] = i;
+            k++;
+            cout << "\n" << k << ". " << ingDesc[i] << " - " << ingMonto[i];
+        }
+    }
+    return k;
+}
+
+// Menú 1: Registro de ingresos — Origen: registrarIngreso()
+void registrarIngreso()
+{
+    if (ingTotal >= MAX_ING)
+    {
+        cout << "\nNo hay espacio para mas ingresos";
+        return;
+    }
+    cout << "\n--- REGISTRAR INGRESO ---\n";
+    string desc = leerTexto("Descripcion: ");
+    double monto = leerMonto("Monto: ", 0.01, 1000000000.0);
+    int cat = elegirCategoriaIng();
+    string fecha = leerFecha("Fecha (dd/mm/aaaa): ");
+
+    if (agregarIngreso(desc, monto, cat, fecha))
+    {
+        guardar();
+        cout << "\nIngreso registrado correctamente";
+    }
+    else
+    {
+        cout << "\nNo se pudo registrar: revise la descripcion";
+    }
+}
+
+// Origen: verTodosIngresos() — Camila
+void verTodosIngresos()
+{
+    cout << "\n--- LISTA DE INGRESOS ---";
+    int k = 0;
+    for (int i = 0; i < ingTotal; i++)
+    {
+        if (ingUsuario[i] == sesion)
+        {
+            k++;
+            mostrarIngreso(k, i);
+        }
+    }
+    if (k == 0)
+    {
+        cout << "\nNo hay ingresos registrados";
+    }
+}
+
+// Origen: buscarIngresosPorCategoria() — Camila
+void buscarIngresosPorCategoria()
+{
+    if (cantidadIngresos() == 0)
+    {
+        cout << "\nNo hay ingresos registrados";
+        return;
+    }
+
+    int c = elegirCategoriaIng();
+    int encontrados = 0;
+
+    cout << "\n--- INGRESOS DE " << nombreCatIng[c] << " ---";
+
+    for (int i = 0; i < ingTotal; i++)
+    {
+        if (ingUsuario[i] == sesion && ingCat[i] == c)
+        {
+            encontrados++;
+            mostrarIngreso(encontrados, i);
+        }
+    }
+
+    if (encontrados == 0)
+    {
+        cout << "\nNo hay ingresos en esta categoria";
+    }
+}
+
+// Origen: resumenIngresos() — Camila
+void resumenIngresos()
+{
+    cout << "\n--- RESUMEN DE INGRESOS ---";
+
+    int cantidad = cantidadIngresos();
+    if (cantidad == 0)
+    {
+        cout << "\nNo hay ingresos registrados";
+        return;
+    }
+
+    double suma = sumaIngresos();
+    cout << "\nCantidad de ingresos: " << cantidad;
+    cout << "\nTotal acumulado: " << suma;
+    cout << "\n\nPor categoria:";
+    for (int i = 0; i < 4; i++)
+    {
+        cout << "\n  " << nombreCatIng[i] << ": " << sumaIngresosCat(i);
+    }
+    cout << "\nPromedio por ingreso: " << suma / cantidad;
+}
+
+// Menú 2: Consulta de ingresos — Origen: menuConsultaIngresos()
+void menuConsultaIngresos()
+{
+    int z = 9;
+
+    while (z != 0)
+    {
+        cout << "\n===== CONSULTA DE INGRESOS =====";
+        cout << "\n1. Ver todos los ingresos";
+        cout << "\n2. Buscar por categoria";
+        cout << "\n3. Resumen de ingresos";
+        cout << "\n0. Volver\n";
+        z = leerEntero("Seleccione una opcion: ", 0, 3);
+
+        switch (z)
+        {
+            case 1:
+                verTodosIngresos();
+                break;
+            case 2:
+                buscarIngresosPorCategoria();
+                break;
+            case 3:
+                resumenIngresos();
+                break;
+            case 0:
+                break;
+        }
+    }
+}
+
+// Menú 3: Modificación de ingresos — Origen: modificarIngreso() y borrarIngreso()
+void modificarIngreso()
+{
+    int mios[MAX_ING];
+
+    cout << "\n--- MODIFICAR INGRESO ---";
+    int k = listarMisIngresos(mios);
+    if (k == 0)
+    {
+        cout << "\nNo hay ingresos registrados";
+        return;
+    }
+
+    int p = leerEntero("\nSeleccione el ingreso que desea modificar: ", 1, k);
+
+    string desc = leerTexto("Nueva descripcion: ");
+    double monto = leerMonto("Nuevo monto: ", 0.01, 1000000000.0);
+    int cat = elegirCategoriaIng();
+    string fecha = leerFecha("Nueva fecha (dd/mm/aaaa): ");
+
+    if (cambiarIngreso(mios[p - 1], desc, monto, cat, fecha))
+    {
+        guardar();
+        cout << "\nIngreso modificado correctamente";
+    }
+}
+
+void borrarIngreso()
+{
+    int mios[MAX_ING];
+
+    cout << "\n--- ELIMINAR INGRESO ---";
+    int k = listarMisIngresos(mios);
+    if (k == 0)
+    {
+        cout << "\nNo hay ingresos registrados";
+        return;
+    }
+
+    int p = leerEntero("\nSeleccione el ingreso que desea eliminar: ", 1, k);
+
+    if (quitarIngreso(mios[p - 1]))
+    {
+        guardar();
+        cout << "\nIngreso eliminado correctamente";
+    }
+}
+
+// Origen: menuIngresos() — Camila
+void menuIngresos()
+{
+    int op = 9;
+
+    while (op != 0)
+    {
+        cout << "\n===== GESTION DE INGRESOS =====";
+        cout << "\n1. Registro de ingresos";
+        cout << "\n2. Consulta de ingresos";
+        cout << "\n3. Modificacion de ingresos";
+        cout << "\n4. Eliminar ingreso";
+        cout << "\n0. Volver al menu principal\n";
+        op = leerEntero("Seleccione una opcion: ", 0, 4);
+
+        switch (op)
+        {
+            case 1:
+                registrarIngreso();
+                break;
+            case 2:
+                menuConsultaIngresos();
+                break;
+            case 3:
+                modificarIngreso();
+                break;
+            case 4:
+                borrarIngreso();
+                break;
+            case 0:
+                cout << "\nVolviendo al menu principal...";
+                break;
+        }
+    }
+}
+
+
+// ==========================================================================
+// MODULO 3: GESTION DE GASTOS (Joaquin 2)
+// ==========================================================================
+
+
+// ----- motor/gastos.cpp -----
+
+// FinanZen — módulo 3 (Joaquín 2): gestión de gastos · integrado con ayuda de Claude Code (IA)
+// Lógica tomada de originales/gastos_joaquin2.cpp. Los cin/cout originales
+// quedaron en consola/menu_gastos.cpp.
+
+// Arreglo original: en main() era "float gastos[100]; int n = 0;"
+float gastos[MAX];
+int nGastos = 0; // Renombrado: era el parámetro n
+
+// Agregados: descripción, categoría, fecha y dueño de cada gasto
+string gasDesc[MAX];
+int gasCat[MAX];
+string gasFecha[MAX];
+int gasUsuario[MAX];
+
+// Original: "float limite = 0" — ahora uno por posición de usuario
+float limiteGasto[MAX];
+
+string nombreCatGas[NUM_CAT_GAS] = {"Comida", "Transporte", "Servicios", "Salidas", "Salud", "Otros"};
+
+// Agregado: validaciones del gasto en una sola función
+bool datosGastoValidos(string desc, float monto, int cat, string fecha)
+{
+    if (!textoValido(desc))
+    {
+        return false;
+    }
+    if (monto <= 0 || monto > MONTO_MAXIMO) // los centavos se redondean al guardar (float no guarda exacto 1234.56)
+    {
+        return false;
+    }
+    if (cat < 0 || cat >= NUM_CAT_GAS)
+    {
+        return false;
+    }
+    return fechaValidaIng(fecha); // se usa la validación de fechas de Camila
+}
+
+// Origen: registrarGastos() opción 1 "Registrar un gasto" — Joaquín 2
+bool registrarGasto(string desc, float monto, int cat, string fecha)
+{
+    if (sesion == -1)
+    {
+        return false;
+    }
+    if (nGastos >= MAX)
+    {
+        return false; // "No hay espacio disponible."
+    }
+    if (!datosGastoValidos(desc, monto, cat, fecha))
+    {
+        return false;
+    }
+
+    gastos[nGastos] = roundf(monto * 100) / 100;
+    gasDesc[nGastos] = desc;
+    gasCat[nGastos] = cat;
+    gasFecha[nGastos] = fecha;
+    gasUsuario[nGastos] = sesion;
+    nGastos++;
+    return true;
+}
+
+// Origen: registrarGastos() opción 3 "Establecer limite de gasto" — Joaquín 2
+bool establecerLimite(float limite)
+{
+    int p = indiceSesion();
+    if (p == -1 || limite < 0 || limite > MONTO_MAXIMO)
+    {
+        return false;
+    }
+    limiteGasto[p] = roundf(limite * 100) / 100;
+    return true;
+}
+
+// Agregado: límite de gasto del usuario conectado
+float limiteSesion()
+{
+    int p = indiceSesion();
+    if (p == -1)
+    {
+        return 0;
+    }
+    return limiteGasto[p];
+}
+
+// Origen: consultarGastos() opción 2 "Mostrar total gastado" — Joaquín 2
+double totalGastado()
+{
+    // Corregido (revisión): se suma en centavos enteros; sumar float perdía centavos
+    long long centavos = 0;
+    for (int i = 0; i < nGastos; i++)
+    {
+        if (gasUsuario[i] == sesion)
+        {
+            centavos += llround(gastos[i] * 100.0);
+        }
+    }
+    return centavos / 100.0;
+}
+
+// Origen: consultarGastos() opción 3 "Mostrar gasto mayor" — Joaquín 2
+float gastoMayor()
+{
+    float mayor = 0;
+    bool primero = true; // Corregido: el original empezaba en gastos[0], que puede ser de otro usuario
+    for (int i = 0; i < nGastos; i++)
+    {
+        if (gasUsuario[i] == sesion)
+        {
+            if (primero || gastos[i] > mayor)
+            {
+                mayor = gastos[i];
+                primero = false;
+            }
+        }
+    }
+    return mayor;
+}
+
+// Origen: consultarGastos() opción 4 "Mostrar gasto menor" — Joaquín 2
+float gastoMenor()
+{
+    float menor = 0;
+    bool primero = true;
+    for (int i = 0; i < nGastos; i++)
+    {
+        if (gasUsuario[i] == sesion)
+        {
+            if (primero || gastos[i] < menor)
+            {
+                menor = gastos[i];
+                primero = false;
+            }
+        }
+    }
+    return menor;
+}
+
+// Agregado: clasificación por categoría
+double totalGastadoCat(int cat)
+{
+    long long centavos = 0;
+    for (int i = 0; i < nGastos; i++)
+    {
+        if (gasUsuario[i] == sesion && gasCat[i] == cat)
+        {
+            centavos += llround(gastos[i] * 100.0);
+        }
+    }
+    return centavos / 100.0;
+}
+
+// Agregado: cuántos gastos tiene el usuario conectado
+int cantidadGastos()
+{
+    int c = 0;
+    for (int i = 0; i < nGastos; i++)
+    {
+        if (gasUsuario[i] == sesion)
+        {
+            c++;
+        }
+    }
+    return c;
+}
+
+// Agregado: el gasto es del usuario conectado
+bool gastoEsMio(int posicion)
+{
+    // "Gasto no valido."
+    return sesion != -1 && posicion >= 0 && posicion < nGastos && gasUsuario[posicion] == sesion;
+}
+
+// Origen: administrarGastos() opción 1 "Modificar gasto" — Joaquín 2
+bool modificarGasto(int posicion, string desc, float monto, int cat, string fecha)
+{
+    if (!gastoEsMio(posicion) || !datosGastoValidos(desc, monto, cat, fecha))
+    {
+        return false;
+    }
+    gastos[posicion] = roundf(monto * 100) / 100;
+    gasDesc[posicion] = desc;
+    gasCat[posicion] = cat;
+    gasFecha[posicion] = fecha;
+    return true; // "Gasto modificado correctamente."
+}
+
+// Origen: administrarGastos() opción 2 "Eliminar gasto" — Joaquín 2
+bool eliminarGasto(int posicion)
+{
+    if (!gastoEsMio(posicion))
+    {
+        return false;
+    }
+
+    for (int i = posicion; i < nGastos - 1; i++)
+    {
+        gastos[i] = gastos[i + 1];
+        gasDesc[i] = gasDesc[i + 1];
+        gasCat[i] = gasCat[i + 1];
+        gasFecha[i] = gasFecha[i + 1];
+        gasUsuario[i] = gasUsuario[i + 1];
+    }
+
+    nGastos--;
+    return true; // "Gasto eliminado correctamente."
+}
+
+// Agregado: al borrar una cuenta se borran sus gastos
+void borrarGastosDeUsuario(int id)
+{
+    int j = 0;
+    for (int i = 0; i < nGastos; i++)
+    {
+        if (gasUsuario[i] != id)
+        {
+            gastos[j] = gastos[i];
+            gasDesc[j] = gasDesc[i];
+            gasCat[j] = gasCat[i];
+            gasFecha[j] = gasFecha[i];
+            gasUsuario[j] = gasUsuario[i];
+            j++;
+        }
+    }
+    nGastos = j;
+}
+
+// Agregado: deja sin límite la posición de un usuario nuevo
+void reiniciarLimiteUsuario(int pos)
+{
+    if (pos >= 0 && pos < MAX)
+    {
+        limiteGasto[pos] = 0;
+    }
+}
+
+// Agregado: Corre los límites junto con los usuarios (mismo criterio que eliminarMetaDeUsuario de Hector)
+void eliminarLimiteDeUsuario(int pos, int totalAntes)
+{
+    if (totalAntes < 1 || totalAntes > MAX || pos < 0 || pos >= totalAntes)
+    {
+        return;
+    }
+    for (int i = pos; i < totalAntes - 1; i++)
+    {
+        limiteGasto[i] = limiteGasto[i + 1];
+    }
+    reiniciarLimiteUsuario(totalAntes - 1);
+}
+
+
+// ----- consola/menu_gastos.cpp -----
+
+// FinanZen — módulo 3 (Joaquín 2): menús de gastos · integrado con ayuda de Claude Code (IA)
+// Textos tomados de originales/gastos_joaquin2.cpp; la lógica está en motor/gastos.cpp.
+
+int elegirCategoriaGasto()
+{
+    cout << "Categoria:";
+    for (int i = 0; i < NUM_CAT_GAS; i++)
+    {
+        cout << "\n  " << i + 1 << ". " << nombreCatGas[i];
+    }
+    cout << "\n";
+    return leerEntero("Seleccione una categoria: ", 1, NUM_CAT_GAS) - 1;
+}
+
+// Pide y registra un gasto (lo que antes era "cout << Ingrese el monto; cin >> gastos[n]")
+void pedirUnGasto()
+{
+    if (nGastos >= MAX)
+    {
+        cout << "No hay espacio disponible." << endl;
+        return;
+    }
+    string desc = leerTexto("Descripcion: ");
+    float monto = (float)leerMonto("Ingrese el monto: ", 0.01, 1000000000.0);
+    int cat = elegirCategoriaGasto();
+    string fecha = leerFecha("Fecha (dd/mm/aaaa): ");
+    if (registrarGasto(desc, monto, cat, fecha))
+    {
+        guardar();
+        cout << "Gasto registrado." << endl;
+        if (limiteSesion() > 0 && totalGastado() > limiteSesion())
+        {
+            cout << "Atencion: supero su limite de gasto de " << limiteSesion() << " Bs" << endl;
+        }
+    }
+    else
+    {
+        cout << "No se pudo registrar: revise la descripcion." << endl;
+    }
+}
+
+// Lista numerada de los gastos del usuario; mios[] guarda su posición real
+int listarMisGastos(int mios[])
+{
+    int k = 0;
+    for (int i = 0; i < nGastos; i++)
+    {
+        if (gasUsuario[i] == sesion)
+        {
+            mios[k] = i;
+            k++;
+            cout << "Gasto " << k << ": " << gastos[i] << " Bs - " << gasDesc[i]
+                 << " (" << nombreCatGas[gasCat[i]] << ", " << gasFecha[i] << ")" << endl;
+        }
+    }
+    return k;
+}
+
+// Menú 1: Registro de gastos — Origen: registrarGastos()
+void registrarGastos()
+{
+    int opcion;
+    int cantidad;
+
+    cout << "\n--- REGISTRAR GASTOS ---" << endl;
+    cout << "1. Registrar un gasto" << endl;
+    cout << "2. Registrar varios gastos" << endl;
+    cout << "3. Establecer limite de gasto" << endl;
+    opcion = leerEntero("Seleccione: ", 1, 3);
+
+    if (opcion == 1)
+    {
+        pedirUnGasto();
+    }
+    else if (opcion == 2)
+    {
+        cantidad = leerEntero("Cuantos gastos desea registrar: ", 1, MAX);
+
+        for (int i = 0; i < cantidad && nGastos < MAX; i++)
+        {
+            cout << "\nGasto " << i + 1 << " de " << cantidad << endl;
+            pedirUnGasto();
+        }
+    }
+    else if (opcion == 3)
+    {
+        float limite = (float)leerMonto("Ingrese su limite de gasto: ", 0, 1000000000.0);
+        if (establecerLimite(limite))
+        {
+            guardar();
+            cout << "Limite guardado." << endl;
+        }
+    }
+}
+
+// Menú 2: Consulta y clasificación — Origen: consultarGastos()
+void consultarGastos()
+{
+    int opcion;
+
+    cout << "\n--- CONSULTAR GASTOS ---" << endl;
+    cout << "1. Mostrar todos los gastos" << endl;
+    cout << "2. Mostrar total gastado" << endl;
+    cout << "3. Mostrar gasto mayor" << endl;
+    cout << "4. Mostrar gasto menor" << endl;
+    cout << "5. Mostrar gastos por categoria" << endl;
+    opcion = leerEntero("Seleccione: ", 1, 5);
+
+    if (cantidadGastos() == 0)
+    {
+        cout << "No hay gastos registrados." << endl;
+        return;
+    }
+
+    if (opcion == 1)
+    {
+        int mios[MAX];
+        listarMisGastos(mios);
+    }
+    else if (opcion == 2)
+    {
+        cout << "Total gastado: " << totalGastado() << " Bs" << endl;
+        if (limiteSesion() > 0)
+        {
+            cout << "Limite de gasto: " << limiteSesion() << " Bs" << endl;
+        }
+    }
+    else if (opcion == 3)
+    {
+        cout << "Gasto mayor: " << gastoMayor() << " Bs" << endl;
+    }
+    else if (opcion == 4)
+    {
+        cout << "Gasto menor: " << gastoMenor() << " Bs" << endl;
+    }
+    else if (opcion == 5)
+    {
+        for (int c = 0; c < NUM_CAT_GAS; c++)
+        {
+            cout << nombreCatGas[c] << ": " << totalGastadoCat(c) << " Bs" << endl;
+        }
+    }
+}
+
+// Menú 3: Modificación o eliminación — Origen: administrarGastos()
+void administrarGastos()
+{
+    int opcion;
+    int posicion;
+    int mios[MAX];
+
+    if (cantidadGastos() == 0)
+    {
+        cout << "No hay gastos registrados." << endl;
+        return;
+    }
+
+    cout << "\n--- ADMINISTRAR GASTOS ---" << endl;
+    cout << "1. Modificar gasto" << endl;
+    cout << "2. Eliminar gasto" << endl;
+    cout << "3. Buscar gasto" << endl;
+    opcion = leerEntero("Seleccione: ", 1, 3);
+
+    int k = listarMisGastos(mios);
+    posicion = leerEntero("Ingrese el numero del gasto: ", 1, k);
+    posicion = mios[posicion - 1];
+
+    if (opcion == 1)
+    {
+        string desc = leerTexto("Nueva descripcion: ");
+        float monto = (float)leerMonto("Ingrese el nuevo monto: ", 0.01, 1000000000.0);
+        int cat = elegirCategoriaGasto();
+        string fecha = leerFecha("Nueva fecha (dd/mm/aaaa): ");
+        if (modificarGasto(posicion, desc, monto, cat, fecha))
+        {
+            guardar();
+            cout << "Gasto modificado correctamente." << endl;
+        }
+    }
+    else if (opcion == 2)
+    {
+        if (eliminarGasto(posicion))
+        {
+            guardar();
+            cout << "Gasto eliminado correctamente." << endl;
+        }
+    }
+    else if (opcion == 3)
+    {
+        cout << "Gasto encontrado: " << gastos[posicion] << " Bs - " << gasDesc[posicion] << endl;
+    }
+}
+
+// Origen: main() de gastos — Joaquín 2
+void menuGastos()
+{
+    int opcion;
+
+    do
+    {
+        cout << "\n===== GESTION DE GASTOS =====" << endl;
+        cout << "1. Registrar gastos" << endl;
+        cout << "2. Consultar gastos" << endl;
+        cout << "3. Administrar gastos" << endl;
+        cout << "0. Salir" << endl;
+        opcion = leerEntero("Seleccione una opcion: ", 0, 3);
+
+        switch (opcion)
+        {
+            case 1:
+                registrarGastos();
+                break;
+            case 2:
+                consultarGastos();
+                break;
+            case 3:
+                administrarGastos();
+                break;
+            case 0:
+                cout << "Saliendo al menu principal" << endl;
+                break;
+        }
+
+    } while (opcion != 0); // Corregido: el original comparaba con 4 y nunca salía
+}
+
+
+// ==========================================================================
+// MODULO 4: PLANIFICACION DEL AHORRO (Hector)
+// ==========================================================================
+
+
+// ----- motor/ahorro.cpp -----
+
+// FinanZen — módulo 4 (Hector): planificación del ahorro · integrado con ayuda de Claude Code (IA)
+// Lógica tomada de originales/ahorro_hector.cpp. Sus lectores con cin (leerEnteroAhorro,
+// leerMontoAhorro, leerTextoAhorro) y sus menús quedaron en consola/.
+// Como en el original, las metas se guardan por POSICIÓN del usuario (0 a 99).
+
+// Datos del módulo: una meta por posición de usuario.
+// Corregido: sin static, para que la app y los archivos .txt puedan leerlos.
+string nombreMeta[MAX_METAS_AHORRO];
+double montoMeta[MAX_METAS_AHORRO] = {};
+double ahorroActual[MAX_METAS_AHORRO] = {};
+int mesesMeta[MAX_METAS_AHORRO] = {};
+bool tieneMeta[MAX_METAS_AHORRO] = {};
+
+// Origen: chequeo de centavos de leerMontoAhorro() — Hector
+bool montoConDosDecimales(double v)
+{
+    return std::isfinite(v) && fabs(v * 100.0 - round(v * 100.0)) < 0.00001;
+}
+
+// Agregado: posición dentro del arreglo de metas
+bool usuarioValidoAhorro(int usuario)
+{
+    return usuario >= 0 && usuario < MAX_METAS_AHORRO;
+}
+
+// Origen: leerMontoAhorro(mensaje, minimo, maximo) — Hector (la validación, sin cin)
+bool montoEnRango(double valor, double minimo, double maximo)
+{
+    return montoConDosDecimales(valor) && valor >= minimo && valor <= maximo;
+}
+
+// Origen: existeMetaAhorro() — Hector
+bool existeMetaAhorro(int usuario)
+{
+    return usuarioValidoAhorro(usuario) && tieneMeta[usuario];
+}
+
+// Agregado: la meta en esa posición es la del usuario conectado
+// (consola y app siempre pasan indiceSesion(); el motor lo verifica igual)
+bool esMiPosicion(int usuario)
+{
+    return usuarioValidoAhorro(usuario) && usuario == indiceSesion();
+}
+
+// Origen: calcularFaltanteAhorro() — Hector
+double calcularFaltanteAhorro(int usuario)
+{
+    if (!existeMetaAhorro(usuario))
+    {
+        return 0; // Corregido: sin meta (o posición inválida) no lee fuera del arreglo
+    }
+    return montoMeta[usuario] - ahorroActual[usuario];
+}
+
+// Agregado: la cuenta en centavos de obtenerAhorroMensual() de Hector, para cualquier monto
+// (la app la usa en la vista previa antes de guardar la meta)
+double cuotaMensual(double monto, double actual, int meses)
+{
+    long long faltante = llround(monto * 100.0) - llround(actual * 100.0);
+    if (faltante <= 0 || meses < 1)
+    {
+        return 0;
+    }
+    return ((faltante + meses - 1) / meses) / 100.0;
+}
+
+// Origen: obtenerAhorroMensual() — Hector (copia exacta)
+double obtenerAhorroMensual(int usuario)
+{
+    if (!existeMetaAhorro(usuario) || mesesMeta[usuario] < 1)
+    {
+        return 0; // Corregido: sin meta no divide por mesesMeta = 0
+    }
+    // Los calculos en centavos evitan errores de redondeo de punto flotante.
+    long long faltante = llround(montoMeta[usuario] * 100.0) - llround(ahorroActual[usuario] * 100.0);
+    return ((faltante + mesesMeta[usuario] - 1) / mesesMeta[usuario]) / 100.0;
+}
+
+// Origen: las validaciones de guardarNuevaMetaAhorro() — Hector
+bool metaValida(string nombre, double monto, double actual, int meses)
+{
+    if (!textoValido(nombre))
+    {
+        return false;
+    }
+    if (!montoEnRango(monto, 0.01, MONTO_MAXIMO)) // "Monto objetivo: "
+    {
+        return false;
+    }
+    if (!montoEnRango(actual, 0.0, monto)) // "Ahorro acumulado hasta ahora: "
+    {
+        return false;
+    }
+    return meses >= 1 && meses <= 1200; // "Meses restantes para alcanzar la meta: "
+}
+
+// Origen: guardarNuevaMetaAhorro() — Hector (crea o reemplaza la meta)
+bool guardarNuevaMeta(int usuario, string nombre, double monto, double actual, int meses)
+{
+    if (!esMiPosicion(usuario) || !metaValida(nombre, monto, actual, meses))
+    {
+        return false;
+    }
+    nombreMeta[usuario] = nombre;
+    montoMeta[usuario] = monto;
+    ahorroActual[usuario] = actual;
+    mesesMeta[usuario] = meses;
+    tieneMeta[usuario] = true;
+    return true; // "Meta guardada correctamente."
+}
+
+// Origen: modificarMetaAhorro() — Hector. Cambia nombre, monto, acumulado y plazo juntos:
+// primero valida todo y, si algo no vale, no cambia nada (la app usa esta función).
+bool modificarMetaCompleta(int usuario, string nombre, double monto, double actual, int meses)
+{
+    if (!existeMetaAhorro(usuario) || !esMiPosicion(usuario) || !metaValida(nombre, monto, actual, meses))
+    {
+        return false;
+    }
+    nombreMeta[usuario] = nombre;
+    montoMeta[usuario] = monto;
+    ahorroActual[usuario] = actual;
+    mesesMeta[usuario] = meses;
+    return true;
+}
+
+// Origen: cambiarNombreMeta() — Hector
+bool cambiarNombreMeta(int usuario, string nombre)
+{
+    if (!existeMetaAhorro(usuario) || !esMiPosicion(usuario) || !textoValido(nombre))
+    {
+        return false;
+    }
+    nombreMeta[usuario] = nombre;
+    return true; // "Nombre actualizado."
+}
+
+// Origen: cambiarMontoMeta() — Hector ("no menor al ahorro acumulado")
+bool cambiarMontoMeta(int usuario, double monto)
+{
+    if (!existeMetaAhorro(usuario) || !esMiPosicion(usuario))
+    {
+        return false;
+    }
+    double minimo = ahorroActual[usuario] > 0.01 ? ahorroActual[usuario] : 0.01;
+    if (!montoEnRango(monto, minimo, MONTO_MAXIMO))
+    {
+        return false;
+    }
+    montoMeta[usuario] = monto;
+    return true; // "Monto actualizado."
+}
+
+// Origen: actualizarAhorroAcumulado() — Hector
+bool actualizarAhorroAcumulado(int usuario, double actual)
+{
+    if (!existeMetaAhorro(usuario) || !esMiPosicion(usuario) || !montoEnRango(actual, 0.0, montoMeta[usuario]))
+    {
+        return false;
+    }
+    ahorroActual[usuario] = actual;
+    return true; // "Ahorro acumulado actualizado."
+}
+
+// Origen: cambiarPlazoMeta() — Hector
+bool cambiarPlazoMeta(int usuario, int meses)
+{
+    if (!existeMetaAhorro(usuario) || !esMiPosicion(usuario) || meses < 1 || meses > 1200)
+    {
+        return false;
+    }
+    mesesMeta[usuario] = meses;
+    return true; // "Plazo actualizado."
+}
+
+// Origen: simularAporteAhorro() — Hector. Devuelve los meses necesarios (0 si no aplica).
+long long mesesConAporte(int usuario, double aporte)
+{
+    if (!existeMetaAhorro(usuario) || !montoEnRango(aporte, 0.01, MONTO_MAXIMO))
+    {
+        return 0;
+    }
+    long long faltanteCentavos = llround(montoMeta[usuario] * 100.0) - llround(ahorroActual[usuario] * 100.0);
+    if (faltanteCentavos <= 0)
+    {
+        return 0; // "La meta ya esta alcanzada."
+    }
+    long long aporteCentavos = llround(aporte * 100.0);
+    return (faltanteCentavos + aporteCentavos - 1) / aporteCentavos;
+}
+
+// Origen: mostrarProyeccionAhorro() — Hector. Llena la tabla Mes | Aporte | Acumulado
+// y devuelve cuántas filas tiene (0 si no hay meta o ya está alcanzada).
+int proyeccionAhorro(int usuario, double aporte[], double acumulado[], int max)
+{
+    if (!existeMetaAhorro(usuario) || calcularFaltanteAhorro(usuario) <= 0)
+    {
+        return 0;
+    }
+    long long acum = llround(ahorroActual[usuario] * 100.0);
+    long long objetivo = llround(montoMeta[usuario] * 100.0);
+    long long mensual = llround(obtenerAhorroMensual(usuario) * 100.0);
+    int filas = 0;
+    for (int mes = 1; mes <= mesesMeta[usuario] && acum < objetivo && filas < max; mes++)
+    {
+        long long a = mensual;
+        if (a > objetivo - acum) a = objetivo - acum;
+        acum += a;
+        aporte[filas] = a / 100.0;
+        acumulado[filas] = acum / 100.0;
+        filas++;
+    }
+    return filas;
+}
+
+// Origen: reiniciarMetaUsuario() — Hector (copia exacta)
+void reiniciarMetaUsuario(int usuario)
+{
+    if (usuario < 0 || usuario >= MAX_METAS_AHORRO) return;
+    nombreMeta[usuario].clear();
+    montoMeta[usuario] = 0;
+    ahorroActual[usuario] = 0;
+    mesesMeta[usuario] = 0;
+    tieneMeta[usuario] = false;
+}
+
+// Origen: eliminarMetaDeUsuario() — Hector (copia exacta)
+// Se llama con el indice eliminado y el total ANTES de reducirlo.
+void eliminarMetaDeUsuario(int usuario, int totalAntes)
+{
+    if (totalAntes < 1 || totalAntes > MAX_METAS_AHORRO || usuario < 0 || usuario >= totalAntes) return;
+    for (int i = usuario; i < totalAntes - 1; i++)
+    {
+        nombreMeta[i] = nombreMeta[i + 1];
+        montoMeta[i] = montoMeta[i + 1];
+        ahorroActual[i] = ahorroActual[i + 1];
+        mesesMeta[i] = mesesMeta[i + 1];
+        tieneMeta[i] = tieneMeta[i + 1];
+    }
+    reiniciarMetaUsuario(totalAntes - 1);
+}
+
+
+// ----- consola/leer.cpp -----
+
+// FinanZen — lectura de datos por consola · integrado con ayuda de Claude Code (IA)
+// Origen: leerEnteroAhorro(), leerMontoAhorro() y leerTextoAhorro() — Hector.
+// Se usan en todos los menús para que una letra donde va un número no cuelgue el programa.
+
+// Origen: leerEnteroAhorro() — Hector
+int leerEntero(string mensaje, int minimo, int maximo)
+{
+    int valor;
+    while (true)
+    {
+        cout << mensaje;
+        if (cin >> valor && valor >= minimo && valor <= maximo &&
+            (cin.peek() == '\n' || cin.peek() == '\r' || cin.peek() == EOF))
+        {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return valor;
+        }
+        if (cin.eof()) exit(0);
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Entrada invalida. Intente nuevamente.\n";
+    }
+}
+
+// Origen: leerMontoAhorro() — Hector
+double leerMonto(string mensaje, double minimo, double maximo)
+{
+    double valor;
+    while (true)
+    {
+        cout << mensaje;
+        if (cin >> valor && std::isfinite(valor) && valor >= minimo && valor <= maximo &&
+            montoConDosDecimales(valor) &&
+            (cin.peek() == '\n' || cin.peek() == '\r' || cin.peek() == EOF))
+        {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return valor;
+        }
+        if (cin.eof()) exit(0);
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Monto invalido. Use hasta dos decimales e intente nuevamente.\n";
+    }
+}
+
+// Origen: leerTextoAhorro() — Hector (además rechaza '|', que separa campos en los .txt)
+string leerTexto(string mensaje)
+{
+    string texto;
+    while (true)
+    {
+        cout << mensaje;
+        if (!getline(cin, texto)) exit(0);
+        if (texto.length() > 0 && texto[texto.length() - 1] == '\r')
+        {
+            texto = texto.substr(0, texto.length() - 1);
+        }
+        if (textoValido(texto)) return texto;
+        cout << "El texto no puede estar vacio ni tener '|'.\n";
+    }
+}
+
+// Origen: el while de fechas de registrarIngreso() — Camila
+string leerFecha(string mensaje)
+{
+    string f = leerTexto(mensaje);
+    while (!fechaValidaIng(f))
+    {
+        f = leerTexto("Fecha invalida, use el formato dd/mm/aaaa con una fecha real: ");
+    }
+    return f;
+}
+
+void guardar()
+{
+    if (!guardarTodo())
+    {
+        cout << "\nAviso: no se pudieron guardar los archivos .txt";
+    }
+}
+
+
+// ----- consola/menu_ahorro.cpp -----
+
+// FinanZen — módulo 4 (Hector): menús de planificación del ahorro · integrado con ayuda de Claude Code (IA)
+// Textos tomados de originales/ahorro_hector.cpp; la lógica está en motor/ahorro.cpp.
+
+static bool existeMetaConsola(int usuario)
+{
+    if (tieneMeta[usuario]) return true;
+    cout << "Primero debe crear una meta.\n";
+    return false;
+}
+
+// Origen: guardarNuevaMetaAhorro() — pide los datos antes de guardar
+static void guardarNuevaMetaAhorro(int usuario)
+{
+    string nombre = leerTexto("Nombre de la meta: ");
+    double monto = leerMonto("Monto objetivo: ", 0.01, 1000000000.0);
+    double actual = leerMonto("Ahorro acumulado hasta ahora: ", 0.0, monto);
+    int meses = leerEntero("Meses restantes para alcanzar la meta: ", 1, 1200);
+    cout << "\nResumen: " << nombre << ", objetivo " << monto
+         << ", acumulado " << actual << ", plazo " << meses << " meses.\n";
+    if (leerEntero("Guardar meta? (1. Si / 0. No): ", 0, 1) == 0)
+    {
+        cout << "Operacion cancelada.\n";
+        return;
+    }
+    if (guardarNuevaMeta(usuario, nombre, monto, actual, meses))
+    {
+        guardar();
+        cout << "Meta guardada correctamente.\n";
+    }
+}
+
+// Origen: mostrarMetaAhorro()
+static void mostrarMetaAhorro(int usuario)
+{
+    if (!existeMetaConsola(usuario)) return;
+    ios::fmtflags formato = cout.flags();
+    streamsize precision = cout.precision();
+    cout << fixed << setprecision(2)
+         << "\n--- DETALLE DE LA META ---\n"
+         << "Nombre: " << nombreMeta[usuario] << '\n'
+         << "Objetivo: " << montoMeta[usuario] << '\n'
+         << "Ahorro acumulado: " << ahorroActual[usuario] << '\n'
+         << "Faltante: " << calcularFaltanteAhorro(usuario) << '\n'
+         << "Progreso: " << ahorroActual[usuario] / montoMeta[usuario] * 100.0 << "%\n"
+         << "Meses restantes: " << mesesMeta[usuario] << '\n';
+    cout.flags(formato);
+    cout.precision(precision);
+}
+
+// Menú 1: Creación de metas — Origen: menuCrearMetaAhorro()
+static void menuCrearMetaAhorro(int usuario)
+{
+    int opcion;
+    do
+    {
+        cout << "\n--- MENU DE CREACION DE META ---\n"
+             << "1. Registrar una meta\n2. Consultar meta actual\n0. Volver\n";
+        opcion = leerEntero("Seleccione una opcion: ", 0, 2);
+        if (opcion == 1)
+        {
+            // Origen: crearMetaAhorro()
+            if (tieneMeta[usuario])
+            {
+                cout << "Ya tiene una meta. Use la opcion de modificar o reemplazar.\n";
+            }
+            else
+            {
+                cout << "\n--- CREAR META DE AHORRO ---\n";
+                guardarNuevaMetaAhorro(usuario);
+            }
+        }
+        if (opcion == 2) mostrarMetaAhorro(usuario);
+    } while (opcion != 0);
+}
+
+// Origen: calcularAhorroMensual()
+static void calcularAhorroMensual(int usuario)
+{
+    double faltante = calcularFaltanteAhorro(usuario);
+    double mensual = obtenerAhorroMensual(usuario);
+    cout << "\n--- AHORRO MENSUAL RECOMENDADO ---\n";
+    ios::fmtflags formatoAnterior = cout.flags();
+    streamsize precisionAnterior = cout.precision();
+    cout << fixed << setprecision(2)
+         << "Meta: " << nombreMeta[usuario] << '\n'
+         << "Monto objetivo: " << montoMeta[usuario] << '\n'
+         << "Ahorro acumulado: " << ahorroActual[usuario] << '\n'
+         << "Monto faltante: " << faltante << '\n'
+         << "Meses restantes: " << mesesMeta[usuario] << '\n'
+         << "Ahorro mensual recomendado: " << mensual << '\n';
+    cout.flags(formatoAnterior);
+    cout.precision(precisionAnterior);
+    if (faltante == 0) cout << "La meta ya esta alcanzada.\n";
+}
+
+// Origen: mostrarProyeccionAhorro()
+static void mostrarProyeccionAhorro(int usuario)
+{
+    double aporte[1200], acumulado[1200];
+    int filas = proyeccionAhorro(usuario, aporte, acumulado, 1200);
+    if (filas == 0)
+    {
+        cout << "La meta ya esta alcanzada.\n";
+        return;
+    }
+    ios::fmtflags formato = cout.flags();
+    streamsize precision = cout.precision();
+    cout << fixed << setprecision(2) << "\nMes | Aporte | Acumulado\n";
+    for (int i = 0; i < filas; i++)
+    {
+        cout << i + 1 << " | " << aporte[i] << " | " << acumulado[i] << '\n';
+    }
+    cout.flags(formato);
+    cout.precision(precision);
+    cout << "Proyeccion estimada sin intereses ni cambios en los aportes.\n";
+}
+
+// Origen: simularAporteAhorro()
+static void simularAporteAhorro(int usuario)
+{
+    if (calcularFaltanteAhorro(usuario) <= 0) { cout << "La meta ya esta alcanzada.\n"; return; }
+    double aporte = leerMonto("Cuanto podria ahorrar al mes?: ", 0.01, 1000000000.0);
+    long long mesesNecesarios = mesesConAporte(usuario, aporte);
+    cout << "Meses estimados para alcanzar la meta: " << mesesNecesarios << '\n';
+    if (mesesNecesarios <= mesesMeta[usuario]) cout << "Este aporte permite cumplir el plazo.\n";
+    else cout << "Este aporte no alcanza para cumplir el plazo actual.\n";
+    cout << "La simulacion no modifica la meta.\n";
+}
+
+// Menú 2: Cálculo del ahorro mensual — Origen: menuCalculoAhorro()
+static void menuCalculoAhorro(int usuario)
+{
+    if (!existeMetaConsola(usuario)) return;
+    int opcion;
+    do
+    {
+        cout << "\n--- MENU DE CALCULO DE AHORRO ---\n"
+             << "1. Calcular ahorro mensual recomendado\n"
+             << "2. Ver proyeccion mensual\n"
+             << "3. Simular otro aporte mensual\n"
+             << "0. Volver\n";
+        opcion = leerEntero("Seleccione una opcion: ", 0, 3);
+        if (opcion == 1) calcularAhorroMensual(usuario);
+        if (opcion == 2) mostrarProyeccionAhorro(usuario);
+        if (opcion == 3) simularAporteAhorro(usuario);
+    } while (opcion != 0);
+}
+
+// Menú 3: Modificación o reemplazo — Origen: modificarMetaAhorro()
+void modificarMetaAhorro(int usuario)
+{
+    if (!existeMetaConsola(usuario)) return;
+    int opcion;
+    do
+    {
+        cout << "\n--- MODIFICAR O REEMPLAZAR META ---\n"
+             << "Meta actual: " << nombreMeta[usuario] << '\n'
+             << "1. Cambiar nombre\n2. Cambiar monto objetivo\n"
+             << "3. Actualizar ahorro acumulado\n4. Cambiar meses restantes\n"
+             << "5. Reemplazar meta completa\n6. Ver detalle de la meta\n0. Volver\n";
+        opcion = leerEntero("Seleccione una opcion: ", 0, 6);
+        bool ok = false;
+        switch (opcion)
+        {
+            case 1:
+                ok = cambiarNombreMeta(usuario, leerTexto("Nuevo nombre: "));
+                if (ok) cout << "Nombre actualizado.\n";
+                break;
+            case 2:
+                ok = cambiarMontoMeta(usuario, leerMonto("Nuevo monto objetivo (no menor al ahorro acumulado): ",
+                    ahorroActual[usuario] > 0.01 ? ahorroActual[usuario] : 0.01, 1000000000.0));
+                if (ok) cout << "Monto actualizado.\n";
+                break;
+            case 3:
+                ok = actualizarAhorroAcumulado(usuario, leerMonto("Ahorro acumulado: ", 0.0, montoMeta[usuario]));
+                if (ok) cout << "Ahorro acumulado actualizado.\n";
+                break;
+            case 4:
+                ok = cambiarPlazoMeta(usuario, leerEntero("Meses restantes: ", 1, 1200));
+                if (ok) cout << "Plazo actualizado.\n";
+                break;
+            case 5:
+                cout << "\n--- REEMPLAZAR META ---\n";
+                cout << "La meta actual solo se reemplazara si confirma los nuevos datos.\n";
+                guardarNuevaMetaAhorro(usuario);
+                break;
+            case 6:
+                mostrarMetaAhorro(usuario);
+                break;
+        }
+        if (ok) guardar();
+    } while (opcion != 0);
+}
+
+// Origen: menuPlanificacionAhorro() — Hector
+void menuPlanificacionAhorro(int usuario)
+{
+    if (usuario < 0 || usuario >= MAX_METAS_AHORRO)
+    {
+        cout << "Indice de usuario invalido.\n";
+        return;
+    }
+    int opcion;
+    do
+    {
+        cout << "\n===== PLANIFICACION DEL AHORRO =====\n"
+             << "1. Crear meta de ahorro\n"
+             << "2. Calcular ahorro mensual recomendado\n"
+             << "3. Modificar o reemplazar meta\n"
+             << "0. Volver\n";
+        opcion = leerEntero("Seleccione una opcion: ", 0, 3);
+        switch (opcion)
+        {
+            case 1: menuCrearMetaAhorro(usuario); break;
+            case 2: menuCalculoAhorro(usuario); break;
+            case 3: modificarMetaAhorro(usuario); break;
+        }
+    } while (opcion != 0);
+}
+
+
+// ==========================================================================
+// MODULO 5: SEGUIMIENTO Y REPORTES (Josue)
+// ==========================================================================
+
+
+// ----- motor/reportes.cpp -----
+
+// FinanZen — módulo 5 (Josue): seguimiento y reportes · integrado con ayuda de Claude Code (IA)
+// Lógica tomada de originales/reportes_josue.cpp (registro_ahorro, progreso_ahorro,
+// resumen_financiero). Su menu5() y sus cout quedaron en consola/menu_reportes.cpp.
+
+// Agregado: registros del ahorro realizado (el original no los guardaba)
+double ahoMonto[MAX];
+string ahoFecha[MAX];
+int ahoUsuario[MAX];
+int ahoTotal = 0;
+
+// Agregado: Suma de lo ahorrado (registrado aquí) por el usuario conectado
+double totalAhorradoRegistrado()
+{
+    double suma = 0;
+    for (int i = 0; i < ahoTotal; i++)
+    {
+        if (ahoUsuario[i] == sesion)
+        {
+            suma += ahoMonto[i];
+        }
+    }
+    return suma;
+}
+
+// Agregado: Saldo disponible = ingresos - gastos - ahorro registrado.
+// El ahorro NO se guarda como gasto, así no se descuenta dos veces.
+double saldoDisponible()
+{
+    return sumaIngresos() - totalGastado() - totalAhorradoRegistrado();
+}
+
+// Origen: registro_ahorro() — Josue
+// Corregido: el original calculaba "sueldo - gastos" con un arreglo sin tamaño
+// (float gasto[]) y variables sin valor inicial. Ahora registra lo que la
+// persona realmente ahorró y lo suma a la meta de Hector.
+bool registro_ahorro(double monto, string fecha)
+{
+    int pos = indiceSesion();
+    if (pos == -1 || !tieneMeta[pos] || ahoTotal >= MAX)
+    {
+        return false;
+    }
+    if (monto <= 0 || !montoConDosDecimales(monto) || !fechaValidaIng(fecha))
+    {
+        return false;
+    }
+    if (monto > calcularFaltanteAhorro(pos) + 0.001)
+    {
+        return false; // no se ahorra más de lo que falta para la meta
+    }
+    if (monto > saldoDisponible() + 0.001)
+    {
+        return false; // no se puede ahorrar dinero que no está disponible
+    }
+
+    ahoMonto[ahoTotal] = monto;
+    ahoFecha[ahoTotal] = fecha;
+    ahoUsuario[ahoTotal] = sesion;
+    ahoTotal++;
+    ahorroActual[pos] = round((ahorroActual[pos] + monto) * 100) / 100; // Corregido: sin error de redondeo
+    return true;
+}
+
+// Origen: progreso_ahorro() — Josue: progreso = (ahorro / meta) * 100
+// Corregido: usa la meta de Hector y el ahorro acumulado, con tope en 100.
+// Devuelve -1 si no hay meta.
+double progreso_ahorro()
+{
+    int pos = indiceSesion();
+    if (pos == -1 || !tieneMeta[pos])
+    {
+        return -1;
+    }
+    double progreso = (ahorroActual[pos] / montoMeta[pos]) * 100;
+    if (progreso > 100)
+    {
+        progreso = 100;
+    }
+    return progreso;
+}
+
+// Origen: resumen_financiero() — Josue ("El saldo de la cuenta es: ...")
+// Devuelve los valores por referencia para que la consola y la app los muestren.
+void resumen_financiero(double &ingresos, double &gastosTotales, double &ahorrado, double &saldo)
+{
+    ingresos = sumaIngresos();
+    gastosTotales = totalGastado();
+    ahorrado = totalAhorradoRegistrado();
+    saldo = ingresos - gastosTotales - ahorrado;
+}
+
+// Agregado: al borrar una cuenta se borran sus ahorros registrados
+void borrarAhorrosDeUsuario(int id)
+{
+    int j = 0;
+    for (int i = 0; i < ahoTotal; i++)
+    {
+        if (ahoUsuario[i] != id)
+        {
+            ahoMonto[j] = ahoMonto[i];
+            ahoFecha[j] = ahoFecha[i];
+            ahoUsuario[j] = ahoUsuario[i];
+            j++;
+        }
+    }
+    ahoTotal = j;
+}
+
+
+// ----- consola/menu_reportes.cpp -----
+
+// FinanZen — módulo 5 (Josue): menús de seguimiento y reportes · integrado con ayuda de Claude Code (IA)
+// Textos tomados de originales/reportes_josue.cpp; la lógica está en motor/reportes.cpp.
+
+// Corregido (revisión): se guarda y restaura el formato de cout, como hace Hector,
+// para no dejar los otros menús con 2 cifras de precisión.
+ios::fmtflags formatoGuardado;
+streamsize precisionGuardada;
+void formatoDinero() { formatoGuardado = cout.flags(); precisionGuardada = cout.precision(); cout << fixed << setprecision(2); }
+void restaurarFormato() { cout.flags(formatoGuardado); cout.precision(precisionGuardada); }
+
+// Origen: menu5() — Josue
+void menu5()
+{
+    cout << "\n\t Menu \n";
+    cout << "1.- Registro del ahorro\n";
+    cout << "2.- Progreso del ahorro\n";
+    cout << "3.- Resumen financiero\n";
+    cout << "0.- Salir\n";
+}
+
+// Menú 1: Registro del ahorro realizado — Origen: registro_ahorro()
+void registroAhorroConsola()
+{
+    int pos = indiceSesion();
+    if (!tieneMeta[pos])
+    {
+        cout << "Primero cree una meta en Planificacion del ahorro." << endl;
+        return;
+    }
+    formatoDinero();
+    cout << "Meta: " << nombreMeta[pos] << " (faltan " << calcularFaltanteAhorro(pos) << " Bs)" << endl;
+    cout << "Saldo disponible: " << saldoDisponible() << " Bs" << endl;
+    restaurarFormato();
+    double monto = leerMonto("Cuanto ahorro?: ", 0.01, 1000000000.0);
+    string fecha = leerFecha("Fecha (dd/mm/aaaa): ");
+    if (registro_ahorro(monto, fecha))
+    {
+        guardar();
+        formatoDinero();
+        cout << "Ahorro registrado. El ahorro total es: " << totalAhorradoRegistrado() << endl;
+        restaurarFormato();
+    }
+    else
+    {
+        cout << "No se puede registrar: supera lo que falta para la meta o su saldo disponible." << endl;
+    }
+}
+
+// Menú 2: Progreso del ahorro — Origen: progreso_ahorro()
+void progresoConsola()
+{
+    double progreso = progreso_ahorro();
+    if (progreso < 0)
+    {
+        cout << "Todavia no tiene una meta de ahorro." << endl;
+        return;
+    }
+    formatoDinero();
+    cout << "Progreso: " << progreso << "%" << endl;
+    cout << "Se ha ahorrado en total un " << progreso << "% de la meta propuesta" << endl;
+    if (progreso >= 100)
+        cout << "La meta de ahorro esta cumplida" << endl;
+    else
+        cout << "Aun no se cumple la meta de ahorro" << endl;
+    restaurarFormato();
+}
+
+// Menú 3: Resumen financiero — Origen: resumen_financiero()
+void resumenConsola()
+{
+    double ingresos, gastosTot, ahorrado, saldo;
+    resumen_financiero(ingresos, gastosTot, ahorrado, saldo);
+    formatoDinero();
+    cout << "\n--- RESUMEN FINANCIERO ---" << endl;
+    cout << "Ingresos: " << ingresos << endl;
+    cout << "Gastos: " << gastosTot << endl;
+    cout << "Ahorro registrado: " << ahorrado << endl;
+    cout << "Saldo disponible: " << saldo << endl;
+    int pos = indiceSesion();
+    if (tieneMeta[pos])
+    {
+        cout << "El saldo para alcanzar la meta es: " << calcularFaltanteAhorro(pos) << endl;
+    }
+    restaurarFormato();
+}
+
+// Origen: main() de reportes — Josue
+void menuReportes()
+{
+    int opcion5;
+    do
+    {
+        menu5();
+        opcion5 = leerEntero("Que seguimiento quiere hacer? ", 0, 3);
+        switch (opcion5)
+        {
+        case 1:
+            registroAhorroConsola();
+            break;
+        case 2:
+            progresoConsola();
+            break;
+        case 3:
+            resumenConsola();
+            break;
+        case 0:
+            cout << "Saliendo al menu principal";
+            break;
+        }
+    } while (opcion5 != 0);
+}
+
+
+// ==========================================================================
+// ARCHIVOS .TXT (guardar y cargar)
+// ==========================================================================
+
+
+// ----- motor/archivos.cpp -----
+
+// FinanZen — funciones comunes del motor y archivos .txt · integrado con ayuda de Claude Code (IA)
+// Archivos (documento del proyecto, sección 8), un registro por línea, campos separados por '|':
+//   usuarios.txt  id|nombre|clave cifrada|limite
+//   ingresos.txt  usuario|descripcion|monto|categoria|fecha
+//   gastos.txt    usuario|descripcion|monto|categoria|fecha
+//   metas.txt     usuario|nombre|monto|acumulado|meses
+//   ahorros.txt   usuario|monto|fecha
+
+string carpetaDatos = ""; // vacío = misma carpeta desde donde se ejecuta el programa
+
+// Agregado: Un texto es válido si no está vacío, no es solo espacios y no tiene '|'
+// ('|' separa los campos en los archivos .txt)
+bool textoValido(string t)
+{
+    if (t.find('|') != string::npos)
+    {
+        return false;
+    }
+    return t.find_first_not_of(" \t\r\n") != string::npos;
+}
+
+// Agregado: Borra todo lo que pertenece al usuario en la posición pos (antes de correr usu[])
+void borrarDatosDeUsuario(int pos)
+{
+    int id = usuId[pos];
+    borrarIngresosDeUsuario(id);
+    borrarGastosDeUsuario(id);
+    borrarAhorrosDeUsuario(id);
+    eliminarLimiteDeUsuario(pos, total);
+    eliminarMetaDeUsuario(pos, total);
+}
+
+// Agregado: vacía todos los arreglos (al cargar y en las pruebas)
+void reiniciarTodo()
+{
+    total = 0;
+    ingTotal = 0;
+    nGastos = 0;
+    ahoTotal = 0;
+    for (int i = 0; i < MAX; i++)
+    {
+        reiniciarLimiteUsuario(i);
+        reiniciarMetaUsuario(i);
+    }
+    proximoId = 1;
+    sesion = -1;
+}
+
+// Agregado: ---------- Guardar ----------
+// Se escribe primero en archivos .tmp; solo si los 5 salieron bien se reemplazan los .txt.
+// Así un error a mitad de camino (archivo bloqueado, memoria llena) no deja los datos vacíos.
+
+string rutaDatos(string nombre)
+{
+    return carpetaDatos + nombre;
+}
+
+// Agregado: guarda los 5 archivos .txt del documento
+bool guardarTodo()
+{
+    string nombres[5] = {"usuarios.txt", "ingresos.txt", "gastos.txt", "metas.txt", "ahorros.txt"};
+    ofstream fu(rutaDatos("usuarios.txt.tmp").c_str());
+    ofstream fi(rutaDatos("ingresos.txt.tmp").c_str());
+    ofstream fg(rutaDatos("gastos.txt.tmp").c_str());
+    ofstream fm(rutaDatos("metas.txt.tmp").c_str());
+    ofstream fa(rutaDatos("ahorros.txt.tmp").c_str());
+    if (!fu || !fi || !fg || !fm || !fa)
+    {
+        return false;
+    }
+    fu << fixed << setprecision(2);
+    fi << fixed << setprecision(2);
+    fg << fixed << setprecision(2);
+    fm << fixed << setprecision(2);
+    fa << fixed << setprecision(2);
+
+    for (int i = 0; i < total; i++)
+    {
+        fu << usuId[i] << "|" << usu[i] << "|" << cifrar(con[i], LLAVE_CIFRADO) << "|" // la contraseña se guarda cifrada
+           << "" << limiteGasto[i] << "\n";
+        if (tieneMeta[i])
+        {
+            // Corregido (revisión): la meta se guarda con el id del dueño, no con su posición
+            fm << usuId[i] << "|" << nombreMeta[i] << "|" << montoMeta[i] << "|"
+               << ahorroActual[i] << "|" << mesesMeta[i] << "\n";
+        }
+    }
+    for (int i = 0; i < ingTotal; i++)
+    {
+        fi << ingUsuario[i] << "|" << ingDesc[i] << "|" << ingMonto[i] << "|"
+           << ingCat[i] << "|" << ingFecha[i] << "\n";
+    }
+    for (int i = 0; i < nGastos; i++)
+    {
+        fg << gasUsuario[i] << "|" << gasDesc[i] << "|" << gastos[i] << "|"
+           << gasCat[i] << "|" << gasFecha[i] << "\n";
+    }
+    for (int i = 0; i < ahoTotal; i++)
+    {
+        fa << ahoUsuario[i] << "|" << ahoMonto[i] << "|" << ahoFecha[i] << "\n";
+    }
+
+    fu.close();
+    fi.close();
+    fg.close();
+    fm.close();
+    fa.close();
+    if (fu.fail() || fi.fail() || fg.fail() || fm.fail() || fa.fail())
+    {
+        return false; // los .txt anteriores quedan intactos
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        remove(rutaDatos(nombres[i]).c_str()); // en Windows rename no pisa un archivo existente
+        if (rename(rutaDatos(nombres[i] + ".tmp").c_str(), rutaDatos(nombres[i]).c_str()) != 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ---------- Cargar ----------
+
+// Agregado: Parte una línea por '|'. Devuelve cuántos campos encontró (max + 1 si sobran).
+int partirLinea(string linea, string campos[], int max)
+{
+    if (linea.length() > 0 && linea[linea.length() - 1] == '\r')
+    {
+        linea = linea.substr(0, linea.length() - 1);
+    }
+    int n = 0;
+    int inicio = 0;
+    for (int i = 0; i <= (int)linea.length(); i++)
+    {
+        if (i == (int)linea.length() || linea[i] == '|')
+        {
+            if (n >= max)
+            {
+                return max + 1;
+            }
+            campos[n] = linea.substr(inicio, i - inicio);
+            n++;
+            inicio = i + 1;
+        }
+    }
+    return n;
+}
+
+// Agregado: Convierte texto a número sin colgarse si viene basura
+bool aDouble(string s, double &v)
+{
+    if (s.length() == 0)
+    {
+        return false;
+    }
+    char *fin;
+    v = strtod(s.c_str(), &fin);
+    return *fin == '\0';
+}
+
+// Agregado: texto a entero sin colgarse
+bool aEntero(string s, int &v)
+{
+    double d;
+    if (!aDouble(s, d) || d != (int)d)
+    {
+        return false;
+    }
+    v = (int)d;
+    return true;
+}
+
+// Agregado: un registro solo se carga si su dueño existe (así un usuario nuevo nunca hereda datos ajenos)
+bool existeUsuarioId(int id)
+{
+    for (int i = 0; i < total; i++)
+    {
+        if (usuId[i] == id)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Agregado: lee los 5 archivos .txt del documento
+bool cargarTodo()
+{
+    reiniciarTodo();
+    string linea;
+    string c[6];
+
+    ifstream fu((carpetaDatos + "usuarios.txt").c_str());
+    while (getline(fu, linea) && total < MAX)
+    {
+        int id;
+        double limite;
+        // Corregido (revisión): se saltean ids o nombres repetidos, para que el inicio de sesión no sea ambiguo
+        if (partirLinea(linea, c, 6) == 4 && aEntero(c[0], id) && id > 0 && !existeUsuarioId(id) &&
+            textoValido(c[1]) && buscarUsuario(c[1]) == -1 && textoValido(c[2]) &&
+            aDouble(c[3], limite) && limite >= 0 && limite <= MONTO_MAXIMO)
+        {
+            usuId[total] = id;
+            usu[total] = c[1];
+            con[total] = descifrar(c[2], LLAVE_CIFRADO); // se descifra al leer
+            limiteGasto[total] = (float)limite;
+            if (id >= proximoId)
+            {
+                proximoId = id + 1;
+            }
+            total++;
+        }
+    }
+
+    ifstream fi((carpetaDatos + "ingresos.txt").c_str());
+    while (getline(fi, linea) && ingTotal < MAX_ING)
+    {
+        int u, cat;
+        double monto;
+        if (partirLinea(linea, c, 6) == 5 && aEntero(c[0], u) && existeUsuarioId(u) && textoValido(c[1]) &&
+            aDouble(c[2], monto) && monto > 0 && aEntero(c[3], cat) && cat >= 0 && cat <= 3 &&
+            fechaValidaIng(c[4]))
+        {
+            ingUsuario[ingTotal] = u;
+            ingDesc[ingTotal] = c[1];
+            ingMonto[ingTotal] = monto;
+            ingCat[ingTotal] = cat;
+            ingFecha[ingTotal] = c[4];
+            ingTotal++;
+        }
+    }
+
+    ifstream fg((carpetaDatos + "gastos.txt").c_str());
+    while (getline(fg, linea) && nGastos < MAX)
+    {
+        int u, cat;
+        double monto;
+        if (partirLinea(linea, c, 6) == 5 && aEntero(c[0], u) && existeUsuarioId(u) && textoValido(c[1]) &&
+            aDouble(c[2], monto) && monto > 0 && aEntero(c[3], cat) && cat >= 0 &&
+            cat < NUM_CAT_GAS && fechaValidaIng(c[4]))
+        {
+            gasUsuario[nGastos] = u;
+            gasDesc[nGastos] = c[1];
+            gastos[nGastos] = (float)monto;
+            gasCat[nGastos] = cat;
+            gasFecha[nGastos] = c[4];
+            nGastos++;
+        }
+    }
+
+    ifstream fm((carpetaDatos + "metas.txt").c_str());
+    while (getline(fm, linea))
+    {
+        int id, meses;
+        double monto, actual;
+        if (partirLinea(linea, c, 6) == 5 && aEntero(c[0], id) && aDouble(c[2], monto) &&
+            aDouble(c[3], actual) && aEntero(c[4], meses) && metaValida(c[1], monto, actual, meses))
+        {
+            // la meta va a la posición actual de su dueño (las metas de Hector van por posición)
+            for (int pos = 0; pos < total; pos++)
+            {
+                if (usuId[pos] == id)
+                {
+                    nombreMeta[pos] = c[1];
+                    montoMeta[pos] = monto;
+                    ahorroActual[pos] = actual;
+                    mesesMeta[pos] = meses;
+                    tieneMeta[pos] = true;
+                }
+            }
+        }
+    }
+
+    ifstream fa((carpetaDatos + "ahorros.txt").c_str());
+    while (getline(fa, linea) && ahoTotal < MAX)
+    {
+        int u;
+        double monto;
+        if (partirLinea(linea, c, 6) == 3 && aEntero(c[0], u) && existeUsuarioId(u) && aDouble(c[1], monto) &&
+            monto > 0 && fechaValidaIng(c[2]))
+        {
+            ahoUsuario[ahoTotal] = u;
+            ahoMonto[ahoTotal] = monto;
+            ahoFecha[ahoTotal] = c[2];
+            ahoTotal++;
+        }
+    }
+
+    return true; // si faltan archivos, se empieza vacío
+}
+
+
+// ==========================================================================
+// MENU DE INICIO Y MENU PRINCIPAL
+// ==========================================================================
+
+
+// ----- consola/main_consola.cpp -----
+
+// FinanZen — versión consola: menú de inicio y menú principal · integrado con ayuda de Claude Code (IA)
+// Une los 5 módulos del equipo. Estructura tomada del main() de Joaquín 1.
+
+void menuPrincipal()
+{
+    int op = 9;
+    while (op != 0 && sesion != -1)
+    {
+        cout << "\n\n===== FINANZEN - MENU PRINCIPAL =====";
+        cout << "\nUsuario: " << nombreSesion();
+        cout << "\n1. Usuarios y perfil";
+        cout << "\n2. Gestion de ingresos";
+        cout << "\n3. Gestion de gastos";
+        cout << "\n4. Planificacion del ahorro";
+        cout << "\n5. Seguimiento y reportes";
+        cout << "\n0. Cerrar sesion\n";
+        op = leerEntero("Seleccione una opcion: ", 0, 5);
+
+        switch (op)
+        {
+            case 1: menuPerfil(); break;
+            case 2: menuIngresos(); break;
+            case 3: menuGastos(); break;
+            case 4: menuPlanificacionAhorro(indiceSesion()); break;
+            case 5: menuReportes(); break;
+            case 0:
+                cerrarSesion();
+                cout << "\nSesion cerrada";
+                break;
+        }
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc == 2)
+    {
+        carpetaDatos = argv[1]; // opcional: carpeta donde están los .txt (terminada en /)
+    }
+    cargarTodo();
+
+    int x = 9;
+    while (x != 0)
+    {
+        cout << "\n\n===== FINANZEN - SISTEMA DE LOGIN =====";
+        cout << "\n1. Registrar usuario";
+        cout << "\n2. Iniciar sesion";
+        cout << "\n3. Listar usuarios";
+        cout << "\n0. Salir\n";
+        x = leerEntero("Seleccione una opcion: ", 0, 3);
+
+        switch (x)
+        {
+            case 1:
+                registrarConsola();
+                break;
+            case 2:
+                if (iniciarConsola())
+                {
+                    menuPrincipal();
+                }
+                break;
+            case 3:
+                lista();
+                break;
+            case 0:
+                cout << "\nSaliendo del sistema...\n";
+                break;
+        }
+    }
+    return 0;
+}
+
